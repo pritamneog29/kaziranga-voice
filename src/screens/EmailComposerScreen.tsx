@@ -25,6 +25,7 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [senderName, setSenderName] = useState(user?.name ?? '');
   const [senderEmail, setSenderEmail] = useState(user?.email ?? '');
+  const [primaryRecipient, setPrimaryRecipient] = useState(DIRECTOR_EMAIL);
   const [otherRecipients, setOtherRecipients] = useState('');
   const [personalExperience, setPersonalExperience] = useState('');
   const [body, setBody] = useState('');
@@ -63,7 +64,7 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
 
     setSending(true);
     try {
-      const recipients = [DIRECTOR_EMAIL, ...parseRecipients(otherRecipients)];
+      const recipients = [primaryRecipient, ...parseRecipients(otherRecipients)];
       const uniqueRecipients = Array.from(new Set(recipients));
 
       const result = await MailComposer.composeAsync({
@@ -121,9 +122,19 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       <AppHeader size="small" />
 
       <Text style={styles.screenTitle}>📧 Compose Email</Text>
-      <Text style={styles.recipientBadge}>To: {DIRECTOR_EMAIL}</Text>
+      
+      <Text style={styles.label}>Primary Recipient (To:)</Text>
+      <TextInput
+        style={styles.input}
+        value={primaryRecipient}
+        onChangeText={setPrimaryRecipient}
+        placeholder="recipient@example.com"
+        placeholderTextColor={COLORS.textMuted}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
       <Text style={styles.recipientHint}>
-        Add additional recipients below if you want to copy others in the message.
+        Default is the Director of Kaziranga National Park. For testing, you can change this to your own email.
       </Text>
 
       <Text style={styles.label}>Additional Recipients</Text>
@@ -136,6 +147,9 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
         autoCapitalize="none"
         keyboardType="email-address"
       />
+      <Text style={styles.recipientHint}>
+        Add other recipients to copy them on this message (optional).
+      </Text>
 
       <Text style={styles.senderNote}>
         {user
