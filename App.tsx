@@ -4,12 +4,10 @@ import { signOut as firebaseSignOut } from 'firebase/auth';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import EmailComposerScreen from './src/screens/EmailComposerScreen';
-import OfflineLetterScreen from './src/screens/OfflineLetterScreen';
-import LetterHistoryScreen from './src/screens/LetterHistoryScreen';
 import { COLORS } from './src/config/theme';
 import { auth } from './src/config/firebase';
 
-type Screen = 'login' | 'home' | 'email' | 'offline' | 'letterHistory';
+type Screen = 'login' | 'home' | 'email';
 
 interface User {
   uid: string;
@@ -42,26 +40,16 @@ export default function App() {
     }
   };
 
-  const handleContinueAsGuest = () => {
-    setUser(null);
-    setScreen('home');
-  };
-
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       {screen === 'login' && (
-        <LoginScreen
-          onSignIn={handleSignIn}
-          onContinueAsGuest={handleContinueAsGuest}
-        />
+        <LoginScreen onSignIn={handleSignIn} />
       )}
       {screen === 'home' && (
         <HomeScreen
           user={user}
           onNavigateEmail={() => setScreen('email')}
-          onNavigateOffline={() => setScreen('offline')}
-          onNavigateLetterHistory={() => setScreen('letterHistory')}
           onSignOut={() => {
             void handleSignOut();
           }}
@@ -73,16 +61,6 @@ export default function App() {
           onBack={() => setScreen('home')}
           onHome={() => setScreen('home')}
         />
-      )}
-      {screen === 'offline' && (
-        <OfflineLetterScreen
-          user={user}
-          onBack={() => setScreen('home')}
-          onHome={() => setScreen('home')}
-        />
-      )}
-      {screen === 'letterHistory' && (
-        <LetterHistoryScreen user={user} onBack={() => setScreen('home')} />
       )}
     </SafeAreaView>
   );

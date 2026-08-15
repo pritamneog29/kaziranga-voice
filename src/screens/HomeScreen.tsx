@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
@@ -14,66 +15,96 @@ import ActionButton from '../components/ActionButton';
 interface Props {
   user: { uid: string; name: string; email: string; photoUrl?: string } | null;
   onNavigateEmail: () => void;
-  onNavigateOffline: () => void;
-  onNavigateLetterHistory: () => void;
   onSignOut: () => void;
 }
 
 export default function HomeScreen({
   user,
   onNavigateEmail,
-  onNavigateOffline,
-  onNavigateLetterHistory,
   onSignOut,
 }: Props) {
+  const { width, height } = useWindowDimensions();
+  const isWide = width >= 900;
+  const magazineMinHeight = Math.max(620, Math.round(height * 0.72));
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <AppHeader size="large" />
+      <View style={styles.pageShell}>
+        <AppHeader size="large" />
 
-      <Text style={styles.greeting}>
-        Welcome, {user ? user.name.split(' ')[0] : 'Guest'} 👋
-      </Text>
-      <Text style={styles.subGreeting}>
-        {user ? user.email : 'Guest mode is view-only. Sign in to send or record actions.'}
-      </Text>
-
-      <View style={styles.calloutBox}>
-        <Text style={styles.calloutTitle}>Protect Indigenous Lands</Text>
-        <Text style={styles.calloutText}>
-          Kaziranga’s surrounding indigenous lands are not just real estate —
-          they are living homelands with rights, memory, and stewardship.
-          Indigenous land-rights advocates such as Pranab Doley have helped
-          show that the proposed hotel construction there must not override the
-          voices of Mising, Karbi, and other local communities.
+        <Text style={styles.greeting}>
+          Welcome, {user ? user.name.split(' ')[0] : 'User'} 👋
         </Text>
-      </View>
+        <Text style={styles.subGreeting}>
+          {user ? user.email : 'Sign in to continue.'}
+        </Text>
 
-      <ImpactCounter />
+        <View
+          style={[
+            styles.magazineLayout,
+            isWide ? styles.magazineWide : styles.magazineNarrow,
+            isWide && { minHeight: magazineMinHeight },
+          ]}
+        >
+          <View style={styles.mainColumn}>
+            <View style={[styles.storyCard, styles.storyGreen]}>
+              <Text style={styles.storyTitle}>Protect Kaziranga</Text>
+              <Text style={styles.storyText}>
+                Kaziranga National Park — a UNESCO World Heritage Site — is under
+                threat. The proposed reduction of its Eco-Sensitive Zone and the
+                construction of a luxury hotel on indigenous lands endanger the
+                world's largest population of the Indian one-horned rhinoceros,
+                Asian elephants, tigers, wild water buffalo, and hundreds of bird
+                species.
+              </Text>
+              <Text style={styles.storyText}>
+                This app makes it easy to <Text style={styles.bold}>raise your voice</Text> — send a pre-drafted email to the Director of Kaziranga National Park. Every send is counted and shown in the live tracker.
+              </Text>
+            </View>
 
-      <View style={styles.actionsHeading}>
-        <Text style={styles.actionsTitle}>Take Action</Text>
-      </View>
+            <View style={[styles.storyCard, styles.storyOrange]}>
+              <Text style={styles.storyTitle}>Protect Indigenous Lands</Text>
+              <Text style={styles.storyText}>
+                Indigenous advocates such as Pranab Doley from the Mising
+                community have helped spotlight that the land around Kaziranga is
+                not just habitat, but homeland. The proposed hotel development
+                must not silence indigenous voices or override their land,
+                livelihood, cultural, and customary rights.
+              </Text>
+            </View>
 
-      {!user && (
-        <View style={styles.guestNoticeBox}>
-          <Text style={styles.guestNoticeTitle}>Sign in required for action</Text>
-          <Text style={styles.guestNoticeText}>
-            Guest mode lets you explore the campaign details and live counters,
-            but both online email sending and offline letter recording are
-            available only after Google sign-in.
-          </Text>
+            <View style={[styles.storyCard, styles.storyYellow]}>
+              <Text style={styles.storyTitle}>Did you know?</Text>
+              <Text style={styles.factItem}>🦏 Kaziranga hosts ~2,600 one-horned rhinos — 70% of the world's population.</Text>
+              <Text style={styles.factItem}>🐯 It has one of the highest tiger densities globally.</Text>
+              <Text style={styles.factItem}>🐘 Over 1,000 Asian elephants roam its grasslands.</Text>
+              <Text style={styles.factItem}>🐦 480+ bird species — a recognised Important Bird Area.</Text>
+              <Text style={styles.factItem}>🌊 The ESZ buffer is critical for flood-season wildlife migration.</Text>
+            </View>
+          </View>
+
+          <View style={styles.sideColumn}>
+            <ImpactCounter />
+
+            <View style={[styles.storyCard, styles.storyFuture]}>
+              <Text style={styles.sideTitle}>Future Plan</Text>
+              <Text style={styles.storyText}>
+                More campaign tools may arrive later, including richer message
+                personalization, progress milestones, and other ways to support
+                Kaziranga.
+              </Text>
+            </View>
+          </View>
         </View>
-      )}
 
-      <View style={styles.actionCard}>
-        <Text style={styles.actionCardEmoji}>📧</Text>
-        <Text style={styles.actionCardTitle}>Send an Email</Text>
-        <Text style={styles.actionCardDesc}>
-          Compose a pre-filled email to the Director of Kaziranga National Park.
-          You can personalise it with your own experiences and highlight
-          indigenous land rights before sending.
-        </Text>
-        {user ? (
+        <View style={styles.actionCard}>
+          <Text style={styles.actionCardEmoji}>📧</Text>
+          <Text style={styles.actionCardTitle}>Send an Email</Text>
+          <Text style={styles.actionCardDesc}>
+            Compose a pre-filled email to the Director of Kaziranga National Park.
+            You can personalise it with your own experiences and highlight
+            indigenous land rights before sending.
+          </Text>
           <View style={styles.buttonRow}>
             <ActionButton
               label="Compose Email"
@@ -83,76 +114,31 @@ export default function HomeScreen({
               inline
             />
           </View>
-        ) : (
-          <Text style={styles.lockedText}>Sign in with Google to unlock online sending.</Text>
-        )}
-      </View>
-
-      <View style={styles.actionCard}>
-        <Text style={styles.actionCardEmoji}>✍️</Text>
-        <Text style={styles.actionCardTitle}>Record Offline Letter</Text>
-        <Text style={styles.actionCardDesc}>
-          Drafted a physical letter to post? Take a photo of it and we'll log
-          your offline action in our records, including support for indigenous
-          land protection.
-        </Text>
-        {user ? (
-          <View style={styles.buttonRow}>
-            <ActionButton
-              label="Record Offline Letter"
-              onPress={onNavigateOffline}
-              variant="secondary"
-              icon="📮"
-              inline
-            />
-          </View>
-        ) : (
-          <Text style={styles.lockedText}>Sign in with Google to record posted letters.</Text>
-        )}
-      </View>
-
-      {user && (
-        <View style={styles.actionCard}>
-          <Text style={styles.actionCardEmoji}>📋</Text>
-          <Text style={styles.actionCardTitle}>View Letter History</Text>
-          <Text style={styles.actionCardDesc}>
-            See all the offline letters you've submitted, including photos and
-            metadata, to track your contribution to protecting Kaziranga.
-          </Text>
-          <View style={styles.buttonRow}>
-            <ActionButton
-              label="View Submitted Letters"
-              onPress={onNavigateLetterHistory}
-              variant="secondary"
-              icon="👁️"
-              inline
-            />
-          </View>
         </View>
-      )}
 
-      <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>Why This Matters</Text>
-        <Text style={styles.infoText}>
-          The Eco-Sensitive Zone (ESZ) is the lifeline of Kaziranga's wildlife.
-          During annual Brahmaputra floods, animals migrate south through the
-          ESZ to the Karbi Anglong hills. Any reduction in this buffer zone
-          blocks those corridors, leaving animals stranded. Luxury hotel
-          construction on indigenous lands threatens the rights, culture,
-          livelihood, and stewardship of indigenous communities, and it further
-          erodes the fragile socio-ecological balance that protects this UNESCO
-          World Heritage Site.
-        </Text>
-      </View>
+        <View style={styles.storyCard}>
+          <Text style={styles.storyTitle}>Why This Matters</Text>
+          <Text style={styles.storyText}>
+            The Eco-Sensitive Zone (ESZ) is the lifeline of Kaziranga's wildlife.
+            During annual Brahmaputra floods, animals migrate south through the
+            ESZ to the Karbi Anglong hills. Any reduction in this buffer zone
+            blocks those corridors, leaving animals stranded. Luxury hotel
+            construction on indigenous lands threatens the rights, culture,
+            livelihood, and stewardship of indigenous communities, and it further
+            erodes the fragile socio-ecological balance that protects this UNESCO
+            World Heritage Site.
+          </Text>
+        </View>
 
-      <View style={styles.buttonRow}>
-        <ActionButton
-          label={user ? 'Sign Out' : 'Back to Login'}
-          onPress={onSignOut}
-          variant="outline"
-          icon="🚪"
-          inline
-        />
+        <View style={styles.buttonRow}>
+          <ActionButton
+            label={user ? 'Sign Out' : 'Back to Login'}
+            onPress={onSignOut}
+            variant="outline"
+            icon="🚪"
+            inline
+          />
+        </View>
       </View>
     </ScrollView>
   );
@@ -166,6 +152,11 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 36,
     paddingBottom: 40,
   },
+  pageShell: {
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
+  },
   greeting: {
     fontSize: 22,
     fontWeight: '700',
@@ -177,102 +168,118 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginBottom: 4,
   },
-  calloutBox: {
-    backgroundColor: '#FFF3E0',
-    borderRadius: 14,
-    padding: 16,
+  magazineLayout: {
     marginTop: 14,
-    marginBottom: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.accent,
+    gap: 12,
+    width: '100%',
+    alignSelf: 'center',
   },
-  calloutTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#B45309',
-    marginBottom: 6,
+  magazineWide: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'center',
   },
-  calloutText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: COLORS.textPrimary,
+  magazineNarrow: {
+    flexDirection: 'column',
   },
-  actionsHeading: { marginTop: 8, marginBottom: 4 },
-  actionsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primaryDark,
+  mainColumn: {
+    flex: 0.96,
+    maxWidth: 640,
+    gap: 12,
   },
-  guestNoticeBox: {
-    backgroundColor: '#FFF8E1',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.accent,
+  sideColumn: {
+    flex: 0.72,
+    maxWidth: 360,
+    gap: 12,
   },
-  guestNoticeTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#8A5A00',
-    marginBottom: 6,
-  },
-  guestNoticeText: {
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    lineHeight: 20,
-  },
-  actionCard: {
+  storyCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 18,
-    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  storyGreen: {
+    backgroundColor: '#F1F8EF',
+    borderLeftColor: COLORS.primary,
+  },
+  storyOrange: {
+    backgroundColor: '#FFF4E7',
+    borderLeftColor: COLORS.accent,
+  },
+  storyYellow: {
+    backgroundColor: '#FFF8E1',
+    borderLeftColor: '#F4B400',
+  },
+  storyBlue: {
+    backgroundColor: '#EDF4FF',
+    borderLeftColor: '#2B7FFF',
+  },
+  storyNeutral: {
+    backgroundColor: '#F7F7F7',
+    borderLeftColor: '#9CA3AF',
+  },
+  storyFuture: {
+    backgroundColor: '#EDF4FF',
+    borderLeftColor: '#2B7FFF',
+  },
+  storyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginBottom: 8,
+  },
+  sideTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginBottom: 8,
+  },
+  storyText: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    lineHeight: 24,
+  },
+  factItem: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+    lineHeight: 23,
+  },
+  bold: { fontWeight: '700' },
+  actionCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
     elevation: 1,
   },
   actionCardEmoji: { fontSize: 30, marginBottom: 6 },
   actionCardTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   actionCardDesc: {
-    fontSize: 13,
+    fontSize: 15,
     color: COLORS.textSecondary,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  lockedText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textMuted,
-    marginTop: 8,
+    lineHeight: 24,
+    marginBottom: 10,
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
     marginTop: 8,
-  },
-  infoBox: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 14,
-    padding: 16,
-    marginVertical: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.primaryDark,
-    marginBottom: 6,
-  },
-  infoText: {
-    fontSize: 13,
-    color: COLORS.textPrimary,
-    lineHeight: 21,
   },
 });

@@ -5,15 +5,15 @@ export const COLORS = {
   primaryDark: '#003300',
   accent: '#FF8F00',        // amber — rhino/sunset
   accentLight: '#FFB300',
-  background: '#F9FBF7',
+  background: '#FAF9F4',
   surface: '#FFFFFF',
   textPrimary: '#1A1A1A',
   textSecondary: '#555555',
   textMuted: '#888888',
   success: '#43A047',
   error: '#C62828',
-  border: '#D0E8C5',
-  counterBg: '#E8F5E9',
+  border: '#E5E2D9',
+  counterBg: '#F3F7EE',
 };
 
 export const FONTS = {

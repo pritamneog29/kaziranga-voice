@@ -10,21 +10,18 @@ Kaziranga Voice makes it easy for anyone to raise their voice against the propos
 
 | Feature | Description |
 |---|---|
-| 🔑 **Optional Google Sign-In** | OAuth login to auto-fill your name/email; guest mode is also supported |
+| 🔑 **Google Sign-In Required** | OAuth login to auto-fill your name/email before sending |
 | 📧 **Pre-drafted Email** | Fully researched, editable email to the Director of Kaziranga NP |
 | 🌿 **Personal Experience Section** | Add your own Kaziranga memories to make the message powerful |
-| 📮 **Offline Letter** | Draft a physical letter, photograph it, and record it in the counter |
-| 📊 **Live Impact Counter** | Real-time Firestore counter of emails sent + letters posted |
-| 📷 **In-App Camera** | Photograph your signed offline letter directly in the app |
+| 📊 **Live Impact Counter** | Real-time Firestore counter of emails sent |
 
 ---
 
 ## Screens
 
-1. **Login Screen** — App purpose, key facts, optional Google Sign-In or continue as guest
+1. **Login Screen** — App purpose, key facts, and Google Sign-In entry
 2. **Home Screen** — Welcome, live counter, action cards
 3. **Email Composer** — Editable email with personal experience section, preview/edit toggle
-4. **Offline Letter** — Letter draft, camera/gallery photo, submit to record
 
 ---
 
@@ -89,9 +86,7 @@ Scan the QR code with **Expo Go** on your Android or iOS device.
 ```
 stats/
   mail_counter/
-    total          (number)  — total actions (emails + letters)
-    online_count   (number)  — emails sent via the app
-    offline_count  (number)  — offline letters recorded
+    total          (number)  — emails sent via the app
     last_updated   (timestamp)
 ```
 
@@ -127,9 +122,7 @@ The Eco-Sensitive Zone is not a bureaucratic formality — it is the migration c
 - [Expo](https://expo.dev) (React Native)
 - [Firebase Firestore](https://firebase.google.com/products/firestore) — real-time counter
 - [expo-auth-session](https://docs.expo.dev/versions/latest/sdk/auth-session/) — Google OAuth
-- [expo-mail-composer](https://docs.expo.dev/versions/latest/sdk/mail-composer/) — email sending
-- [expo-camera](https://docs.expo.dev/versions/latest/sdk/camera/) — letter photography
-- [expo-image-picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) — gallery access
+- [expo-web-browser](https://docs.expo.dev/versions/latest/sdk/webbrowser/) — OAuth session handling
 
 ---
 

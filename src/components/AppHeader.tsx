@@ -14,7 +14,7 @@ export default function AppHeader({ size = 'large', onPressHome }: Props) {
       <Text style={[styles.emoji, isLarge ? styles.emojiLarge : styles.emojiSmall]}>
         🦏
       </Text>
-      <View>
+      <View style={styles.titleWrap}>
         <Text style={[styles.title, isLarge ? styles.titleLarge : styles.titleSmall]}>
           Kaziranga Voice
         </Text>
@@ -44,22 +44,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  large: { marginBottom: 8 },
+  large: {
+    marginBottom: 8,
+    width: '100%',
+    justifyContent: 'center',
+  },
   small: { marginBottom: 0 },
   emoji: { },
   emojiLarge: { fontSize: 42 },
   emojiSmall: { fontSize: 26 },
+  titleWrap: {
+    alignItems: 'center',
+  },
   title: {
     color: COLORS.primary,
     fontWeight: '800',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
-  titleLarge: { fontSize: 28 },
+  titleLarge: { fontSize: 30 },
   titleSmall: { fontSize: 20 },
   subtitle: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-    letterSpacing: 1,
+    color: COLORS.textMuted,
+    fontSize: 11,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
 });

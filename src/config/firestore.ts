@@ -1,4 +1,4 @@
-// Firestore helpers for tracking mail/letter counts and storing offline letters.
+// Firestore helpers for tracking mail counts and legacy offline letter records.
 // Collections:
 //   "stats" / "mail_counter" → counter tracking
 //   "offline_letters" → individual letter submissions with photos
@@ -27,8 +27,6 @@ const USER_ONLINE_MAIL_STATUS_COLLECTION = 'user_online_mail_status';
 
 export interface MailStats {
   total: number;
-  online_count: number;
-  offline_count: number;
   last_updated: Date | null;
 }
 
@@ -49,8 +47,6 @@ async function ensureCounter(): Promise<void> {
   if (!snap.exists()) {
     await setDoc(COUNTER_REF, {
       total: 0,
-      online_count: 0,
-      offline_count: 0,
       last_updated: serverTimestamp(),
     });
   }
@@ -150,12 +146,10 @@ export function subscribeToStats(
       const d = snap.data();
       callback({
         total: d.total ?? 0,
-        online_count: d.online_count ?? 0,
-        offline_count: d.offline_count ?? 0,
         last_updated: d.last_updated?.toDate?.() ?? null,
       });
     } else {
-      callback({ total: 0, online_count: 0, offline_count: 0, last_updated: null });
+      callback({ total: 0, last_updated: null });
     }
   });
 }

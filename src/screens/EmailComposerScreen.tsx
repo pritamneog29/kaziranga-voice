@@ -8,12 +8,12 @@ import {
   Alert,
   Platform,
   TouchableOpacity,
-  Linking,
+  useWindowDimensions,
 } from 'react-native';
-import * as MailComposer from 'expo-mail-composer';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
+import ImpactCounter from '../components/ImpactCounter';
 import { DIRECTOR_EMAIL, DEFAULT_SUBJECT, buildDefaultBody } from '../config/emailTemplate';
 import {
   hasUserSentOnlineMail,
@@ -37,6 +37,8 @@ type SendState = 'idle' | 'sending' | 'sent' | 'failed';
 const SEND_LOCK_BYPASS_EMAIL = 'pritamneog29@gmail.com';
 
 export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [senderName, setSenderName] = useState(user?.name ?? '');
   const [senderEmail, setSenderEmail] = useState(user?.email ?? '');
@@ -59,7 +61,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     if (!user) {
       Alert.alert(
         'Sign In Required',
-        'Please sign in with Google to send an email. Guest mode is view-only.',
+        'Please sign in with Google to send an email.',
         [{ text: 'OK', onPress: onBack }],
       );
     }
@@ -178,19 +180,6 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     }
   };
 
-  const openMailDraft = async (mailtoLink: string) => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.location.href = mailtoLink;
-      return;
-    }
-
-    const canOpen = await Linking.canOpenURL(mailtoLink);
-    if (!canOpen) {
-      throw new Error('No compatible mail app was found to open this draft.');
-    }
-    await Linking.openURL(mailtoLink);
-  };
-
   const handleSend = async () => {
     if (isSendLockedForUser) {
       Alert.alert(
@@ -202,8 +191,16 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
     if (!senderEmail.trim()) {
       Alert.alert(
-        'Email Required',
-        'Please enter your email address before sending the message.',
+       'Email Required',
+       'Please enter your email address before sending the message.',
+      );
+      return;
+    }
+
+    if (!user?.googleAccessToken) {
+      Alert.alert(
+       'Google Sign-In Required',
+       'Please sign in again so the app can send through your Google account.',
       );
       return;
     }
@@ -216,98 +213,43 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
       const uniqueRecipients = Array.from(new Set(recipients));
       const bodyText = getBody();
 
-      if (user?.googleAccessToken) {
-        await sendViaGmailApi(
-          user.googleAccessToken,
-          uniqueRecipients,
-          subject,
-          bodyText,
-        );
-        await recordOnlineMail();
-        if (!isSendLockBypassUser) {
-          try {
-            await markUserOnlineMailSent(user.uid);
-          } catch (e: any) {
-            if (e?.code !== 'permission-denied') {
-              throw e;
-            }
-          }
-          setHasAlreadySent(true);
-        }
-        setSendState('sent');
-        setSendStateText('Sent successfully via Gmail API and counted.');
-        Alert.alert(
-          '✅ Email Sent!',
-          'Your email was sent via your Google account and recorded.',
-          [{ text: 'Go Back', onPress: onBack }],
-        );
-        return;
+      await sendViaGmailApi(
+       user.googleAccessToken,
+       uniqueRecipients,
+       subject,
+       bodyText,
+      );
+      try {
+       await recordOnlineMail();
+      } catch (e: any) {
+       console.error('Record mail failed:', e);
       }
-
-      if (Platform.OS === 'web') {
-        const mailtoLink = `mailto:${uniqueRecipients.join(';')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-        await openMailDraft(mailtoLink);
-        setSendState('sent');
-        setSendStateText('Draft opened in your mail app.');
-        Alert.alert(
-          'Draft Opened',
-          'Your mail app opened with a draft. Since you are not signed in with Google send permission, this web flow cannot verify sent status automatically.',
-        );
-      } else {
-        const available = await MailComposer.isAvailableAsync();
-        if (!available) {
-          Alert.alert(
-            'No Email App Found',
-            'Please install a mail app (Gmail, Outlook) and try again, or use the offline letter option.',
-          );
-          return;
-        }
-
-        const result = await MailComposer.composeAsync({
-          recipients: uniqueRecipients,
-          subject,
-          body: bodyText,
-        });
-
-        if (result.status === MailComposer.MailComposerStatus.SENT) {
-          await recordOnlineMail();
-          if (user?.uid && !isSendLockBypassUser) {
-            try {
-              await markUserOnlineMailSent(user.uid);
-            } catch (e: any) {
-              if (e?.code !== 'permission-denied') {
-                throw e;
-              }
-            }
-            setHasAlreadySent(true);
-          }
-          setSendState('sent');
-          setSendStateText('Sent successfully and counted.');
-          Alert.alert(
-            '✅ Email Sent!',
-            'Thank you for speaking up for Kaziranga. Your message has been sent and recorded.',
-            [{ text: 'Go Back', onPress: onBack }],
-          );
-        } else if (result.status === MailComposer.MailComposerStatus.CANCELLED) {
-          setSendState('idle');
-          setSendStateText('Send cancelled.');
-        } else {
-          setSendState('failed');
-          setSendStateText('Send status could not be confirmed.');
-          Alert.alert('Unknown Status', 'The email status could not be confirmed.');
-        }
+      if (!isSendLockBypassUser) {
+       try {
+         await markUserOnlineMailSent(user.uid);
+       } catch (e: any) {
+         console.warn('Mark send failed (non-critical):', e?.message);
+       }
+       setHasAlreadySent(true);
       }
+      setSendState('sent');
+      setSendStateText('Sent successfully via Gmail API and counted.');
+      Alert.alert(
+       '✅ Email Sent!',
+       'Your email was sent via your Google account and recorded.',
+       [{ text: 'Go Back', onPress: onBack }],
+      );
     } catch (e: any) {
       const message = e?.message ?? 'Could not send email.';
       setSendState('failed');
       setSendStateText(`Failed: ${message}`);
       if (message.includes('Gmail API send failed (403)')) {
-        Alert.alert(
-          'Permission Not Granted Yet',
-          'Google blocked Gmail API send for this app right now (usually because the app is unverified or consent was not fully granted). Please continue from the warning screen with "unsafe", ensure your account is added as a test user, then try again.',
-        );
+       Alert.alert(
+         'Permission Not Granted Yet',
+         'Google blocked Gmail API send for this app right now (usually because the app is unverified or consent was not fully granted). Please continue from the warning screen with "unsafe", ensure your account is added as a test user, then try again.',
+       );
       } else {
-        Alert.alert('Error', message);
+       Alert.alert('Error', message);
       }
     } finally {
       setSending(false);
@@ -337,165 +279,194 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+      <View style={styles.pageShell}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
 
-      <AppHeader size="small" onPressHome={onHome} />
+        <AppHeader size="small" onPressHome={onHome} />
 
-      <Text style={styles.screenTitle}>📧 Compose Email</Text>
-      
-      <Text style={styles.label}>Primary Recipient (To:)</Text>
-      <TextInput
-        style={styles.input}
-        value={primaryRecipient}
-        onChangeText={setPrimaryRecipient}
-        placeholder="recipient@example.com"
-        placeholderTextColor={COLORS.textMuted}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <Text style={styles.recipientHint}>
-        Default is the Director of Kaziranga National Park. For testing, you can change this to your own email.
-      </Text>
+        <Text style={styles.screenTitle}>📧 Compose Email</Text>
+        <View style={[styles.magazineLayout, isWide ? styles.magazineWide : styles.magazineNarrow]}>
+          <View style={styles.mainColumn}>
+            <Text style={styles.label}>Primary Recipient (To:)</Text>
+            <TextInput
+              style={styles.input}
+              value={primaryRecipient}
+              onChangeText={setPrimaryRecipient}
+              placeholder="recipient@example.com"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <Text style={styles.recipientHint}>
+              Default is the Director of Kaziranga National Park. For testing, you can change this to your own email.
+            </Text>
 
-      <Text style={styles.label}>Additional Recipients</Text>
-      <TextInput
-        style={styles.input}
-        value={otherRecipients}
-        onChangeText={setOtherRecipients}
-        placeholder="comma-separated emails, e.g. local.officer@example.com, activist@example.org"
-        placeholderTextColor={COLORS.textMuted}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <Text style={styles.recipientHint}>
-        Add other recipients to copy them on this message (optional).
-      </Text>
+            <Text style={styles.label}>Additional Recipients</Text>
+            <TextInput
+              style={styles.input}
+              value={otherRecipients}
+              onChangeText={setOtherRecipients}
+              placeholder="comma-separated emails, e.g. local.officer@example.com, activist@example.org"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <Text style={styles.recipientHint}>
+              Add other recipients to copy them on this message (optional).
+            </Text>
 
-      <Text style={styles.senderNote}>
-        {user
-          ? 'Using your signed-in identity. You can still edit it below.'
-          : 'You are using guest mode. Please enter your name and email.'}
-      </Text>
+            <Text style={styles.senderNote}>
+              Using your signed-in identity. You can still edit it below.
+            </Text>
 
-      <Text style={styles.label}>Your Name</Text>
-      <TextInput
-        style={styles.input}
-        value={senderName}
-        onChangeText={setSenderName}
-        placeholder="Your full name"
-        placeholderTextColor={COLORS.textMuted}
-      />
+            <Text style={styles.label}>Your Name</Text>
+            <TextInput
+              style={styles.input}
+              value={senderName}
+              onChangeText={setSenderName}
+              placeholder="Your full name"
+              placeholderTextColor={COLORS.textMuted}
+            />
 
-      <Text style={styles.label}>Your Email</Text>
-      <TextInput
-        style={styles.input}
-        value={senderEmail}
-        onChangeText={setSenderEmail}
-        placeholder="you@example.com"
-        placeholderTextColor={COLORS.textMuted}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+            <Text style={styles.label}>Your Email</Text>
+            <TextInput
+              style={styles.input}
+              value={senderEmail}
+              onChangeText={setSenderEmail}
+              placeholder="you@example.com"
+              placeholderTextColor={COLORS.textMuted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-      {/* Subject */}
-      <Text style={styles.label}>Subject</Text>
-      <TextInput
-        style={styles.input}
-        value={subject}
-        onChangeText={setSubject}
-        multiline
-        returnKeyType="done"
-      />
+            <Text style={styles.label}>Subject</Text>
+            <TextInput
+              style={styles.input}
+              value={subject}
+              onChangeText={setSubject}
+              multiline
+              returnKeyType="done"
+            />
 
-      {/* Personal Experience */}
-      <View style={styles.experienceBox}>
-        <Text style={styles.experienceTitle}>🌿 Your Personal Experience at Kaziranga</Text>
-        <Text style={styles.experienceHint}>
-          Have you visited Kaziranga? Share a memory, a sighting, or what this
-          place means to you. If you have a connection with the indigenous
-          communities or their lands, please mention that too. This personal
-          touch makes your message more powerful. (Optional)
-        </Text>
-        <TextInput
-          style={styles.experienceInput}
-          value={personalExperience}
-          onChangeText={setPersonalExperience}
-          placeholder="e.g. I visited Kaziranga in 2019 and watched a rhino wade through a beel at dawn. That memory stays with me. Kaziranga is irreplaceable..."
-          placeholderTextColor={COLORS.textMuted}
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-        />
-      </View>
+            <View style={styles.experienceBox}>
+              <Text style={styles.experienceTitle}>🌿 Your Personal Experience at Kaziranga</Text>
+              <Text style={styles.experienceHint}>
+                Have you visited Kaziranga? Share a memory, a sighting, or what this
+                place means to you. If you have a connection with the indigenous
+                communities or their lands, please mention that too. This personal
+                touch makes your message more powerful. (Optional)
+              </Text>
+              <TextInput
+                style={styles.experienceInput}
+                value={personalExperience}
+                onChangeText={setPersonalExperience}
+                placeholder="e.g. I visited Kaziranga in 2019 and watched a rhino wade through a beel at dawn. That memory stays with me. Kaziranga is irreplaceable..."
+                placeholderTextColor={COLORS.textMuted}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+              />
+            </View>
 
-      {/* Email Body Preview/Edit */}
-      <View style={styles.bodyHeader}>
-        <Text style={styles.label}>Email Body</Text>
-        <View style={styles.bodyActions}>
-          <TouchableOpacity onPress={() => setShowPreview(!showPreview)} style={styles.previewBtn}>
-            <Text style={styles.previewBtnText}>{showPreview ? 'Edit' : 'Preview'}</Text>
-          </TouchableOpacity>
-          {bodyEdited && (
-            <TouchableOpacity onPress={handleResetBody} style={styles.resetBtn}>
-              <Text style={styles.resetBtnText}>Reset</Text>
-            </TouchableOpacity>
-          )}
+            <View style={styles.bodyHeader}>
+              <Text style={styles.label}>Email Body</Text>
+              <View style={styles.bodyActions}>
+                <TouchableOpacity onPress={() => setShowPreview(!showPreview)} style={styles.previewBtn}>
+                  <Text style={styles.previewBtnText}>{showPreview ? 'Edit' : 'Preview'}</Text>
+                </TouchableOpacity>
+                {bodyEdited && (
+                  <TouchableOpacity onPress={handleResetBody} style={styles.resetBtn}>
+                    <Text style={styles.resetBtnText}>Reset</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {showPreview ? (
+              <View style={styles.previewBox}>
+                <Text style={styles.previewText}>{getBody()}</Text>
+              </View>
+            ) : (
+              <TextInput
+                style={styles.bodyInput}
+                value={bodyEdited ? body : getBody()}
+                onChangeText={handleBodyChange}
+                multiline
+                textAlignVertical="top"
+                scrollEnabled={false}
+              />
+            )}
+
+            {!bodyEdited && (
+              <Text style={styles.editHint}>
+                ✏️ Tap the body above to personalise it. Your personal experience
+                section above is automatically included, and the letter already
+                includes stronger language on indigenous land rights.
+              </Text>
+            )}
+
+            <ActionButton
+              label={isSendLockedForUser ? 'Email Already Sent' : 'Send Email'}
+              onPress={handleSend}
+              loading={sending}
+              disabled={checkingSendEligibility || isSendLockedForUser}
+              variant="primary"
+              icon="📨"
+            />
+
+            {sendState !== 'idle' && (
+              <View
+                style={[
+                  styles.statusBox,
+                  sendState === 'sending'
+                    ? styles.statusSending
+                    : sendState === 'sent'
+                    ? styles.statusSent
+                    : styles.statusFailed,
+                ]}
+              >
+                <Text style={styles.statusText}>{sendStateText}</Text>
+              </View>
+            )}
+
+            <Text style={styles.disclaimer}>
+              Signed-in users send through Gmail API with delivery confirmation and
+              the action is counted immediately after success.
+            </Text>
+          </View>
+
+          <View style={styles.sideColumn}>
+            <ImpactCounter />
+
+            <View style={[styles.storyCard, styles.storyBlue]}>
+              <Text style={styles.sideTitle}>Compose guide</Text>
+              <Text style={styles.sideText}>
+                Keep the message direct, personal, and rooted in Kaziranga's wildlife and indigenous land rights.
+              </Text>
+            </View>
+
+            <View style={[styles.storyCard, styles.storyOrange]}>
+              <Text style={styles.sideTitle}>Personal touch</Text>
+              <Text style={styles.sideText}>
+                Add one memory or observation from Kaziranga to make the email feel authentic.
+              </Text>
+            </View>
+
+            <View style={[styles.storyCard, styles.storyNeutral]}>
+              <Text style={styles.sideTitle}>Status</Text>
+              <Text style={styles.sideText}>
+                {sendState === 'sending'
+                  ? 'Sending right now...'
+                  : sendState === 'sent'
+                    ? 'Sent and counted.'
+                    : 'Ready when you are.'}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
-
-      {showPreview ? (
-        <View style={styles.previewBox}>
-          <Text style={styles.previewText}>{getBody()}</Text>
-        </View>
-      ) : (
-        <TextInput
-          style={styles.bodyInput}
-          value={bodyEdited ? body : getBody()}
-          onChangeText={handleBodyChange}
-          multiline
-          textAlignVertical="top"
-          scrollEnabled={false}
-        />
-      )}
-
-      {!bodyEdited && (
-        <Text style={styles.editHint}>
-          ✏️ Tap the body above to personalise it. Your personal experience
-          section above is automatically included, and the letter already
-          includes stronger language on indigenous land rights.
-        </Text>
-      )}
-
-      <ActionButton
-        label={isSendLockedForUser ? 'Email Already Sent' : 'Send Email'}
-        onPress={handleSend}
-        loading={sending}
-        disabled={checkingSendEligibility || isSendLockedForUser}
-        variant="primary"
-        icon="📨"
-      />
-
-      {sendState !== 'idle' && (
-        <View
-          style={[
-            styles.statusBox,
-            sendState === 'sending'
-              ? styles.statusSending
-              : sendState === 'sent'
-              ? styles.statusSent
-              : styles.statusFailed,
-          ]}
-        >
-          <Text style={styles.statusText}>{sendStateText}</Text>
-        </View>
-      )}
-
-      <Text style={styles.disclaimer}>
-        Signed-in users send through Gmail API with delivery confirmation.
-        Unsigned web users open a mail draft and are not auto-counted.
-      </Text>
     </ScrollView>
   );
 }
@@ -507,6 +478,72 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 36,
     paddingBottom: 40,
+  },
+  pageShell: {
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
+  },
+  magazineLayout: {
+    marginTop: 14,
+    gap: 12,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  magazineWide: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'center',
+  },
+  magazineNarrow: {
+    flexDirection: 'column',
+  },
+  mainColumn: {
+    flex: 0.96,
+    maxWidth: 820,
+    gap: 10,
+  },
+  sideColumn: {
+    flex: 1,
+    maxWidth: 400,
+    gap: 14,
+  },
+  storyCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+    minHeight: 120,
+  },
+  storyBlue: {
+    backgroundColor: '#EDF4FF',
+    borderLeftColor: '#2B7FFF',
+  },
+  storyOrange: {
+    backgroundColor: '#FFF4E7',
+    borderLeftColor: COLORS.accent,
+  },
+  storyNeutral: {
+    backgroundColor: '#F7F7F7',
+    borderLeftColor: '#9CA3AF',
+  },
+  sideTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginBottom: 8,
+  },
+  sideText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: COLORS.textSecondary,
   },
   backBtn: { marginBottom: 12 },
   backText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
@@ -543,16 +580,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textSecondary,
+    color: COLORS.primaryDark,
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E4EAE2',
     padding: 12,
     fontSize: 14,
     color: COLORS.textPrimary,
@@ -560,7 +597,7 @@ const styles = StyleSheet.create({
   },
   experienceBox: {
     backgroundColor: '#FFF8E1',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderLeftWidth: 4,
@@ -574,13 +611,13 @@ const styles = StyleSheet.create({
   },
   experienceHint: {
     fontSize: 12,
-    color: '#795548',
+    color: '#6D4C41',
     marginBottom: 10,
     lineHeight: 18,
   },
   experienceInput: {
-    backgroundColor: '#FFFDE7',
-    borderRadius: 10,
+    backgroundColor: '#FFFDF3',
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#FFE082',
     padding: 12,
@@ -611,10 +648,10 @@ const styles = StyleSheet.create({
   },
   resetBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   bodyInput: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E4EAE2',
     padding: 12,
     fontSize: 13,
     color: COLORS.textPrimary,
@@ -622,10 +659,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previewBox: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E4EAE2',
     padding: 14,
     minHeight: 240,
     marginBottom: 10,
@@ -642,22 +679,22 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   statusBox: {
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginTop: 10,
   },
   statusSending: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#EDF4FF',
     borderColor: '#64B5F6',
   },
   statusSent: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#F1F8EF',
     borderColor: '#81C784',
   },
   statusFailed: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FFF1F1',
     borderColor: '#E57373',
   },
   statusText: {
@@ -668,7 +705,7 @@ const styles = StyleSheet.create({
   disclaimer: {
     fontSize: 11,
     color: COLORS.textMuted,
-    textAlign: 'center',
+    textAlign: 'left',
     marginTop: 8,
     lineHeight: 17,
   },

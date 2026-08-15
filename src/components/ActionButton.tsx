@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingVertical: 14,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 6,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   buttonInline: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 1,
