@@ -1,0 +1,52 @@
+import React from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { COLORS } from '../config/theme';
+
+interface Props {
+  size?: 'small' | 'large';
+}
+
+export default function AppHeader({ size = 'large' }: Props) {
+  const isLarge = size === 'large';
+  return (
+    <View style={[styles.container, isLarge ? styles.large : styles.small]}>
+      <Text style={[styles.emoji, isLarge ? styles.emojiLarge : styles.emojiSmall]}>
+        🦏
+      </Text>
+      <View>
+        <Text style={[styles.title, isLarge ? styles.titleLarge : styles.titleSmall]}>
+          Kaziranga Voice
+        </Text>
+        {isLarge && (
+          <Text style={styles.subtitle}>Speak up for the Wild</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  large: { marginBottom: 8 },
+  small: { marginBottom: 0 },
+  emoji: { },
+  emojiLarge: { fontSize: 42 },
+  emojiSmall: { fontSize: 26 },
+  title: {
+    color: COLORS.primary,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  titleLarge: { fontSize: 28 },
+  titleSmall: { fontSize: 20 },
+  subtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+});
