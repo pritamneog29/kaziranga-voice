@@ -10,7 +10,7 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
-import { signInWithCredential, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';

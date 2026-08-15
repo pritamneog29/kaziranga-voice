@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS } from '../config/theme';
 
 interface Props {
   size?: 'small' | 'large';
+  onPressHome?: () => void;
 }
 
-export default function AppHeader({ size = 'large' }: Props) {
+export default function AppHeader({ size = 'large', onPressHome }: Props) {
   const isLarge = size === 'large';
-  return (
+  const content = (
     <View style={[styles.container, isLarge ? styles.large : styles.small]}>
       <Text style={[styles.emoji, isLarge ? styles.emojiLarge : styles.emojiSmall]}>
         🦏
@@ -22,6 +23,18 @@ export default function AppHeader({ size = 'large' }: Props) {
         )}
       </View>
     </View>
+  );
+
+  if (onPressHome) {
+    return (
+      <TouchableOpacity onPress={onPressHome} activeOpacity={0.8}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    content
   );
 }
 

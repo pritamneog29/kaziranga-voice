@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,11 @@ import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
 import { DIRECTOR_EMAIL, DEFAULT_SUBJECT, buildDefaultBody } from '../config/emailTemplate';
-import { recordOnlineMail } from '../config/firestore';
+import {
+  hasUserSentOnlineMail,
+  markUserOnlineMailSent,
+  recordOnlineMail,
+} from '../config/firestore';
 
 interface Props {
   user: {
@@ -26,9 +30,13 @@ interface Props {
     googleAccessToken?: string;
   } | null;
   onBack: () => void;
+  onHome: () => void;
 }
 
-export default function EmailComposerScreen({ user, onBack }: Props) {
+type SendState = 'idle' | 'sending' | 'sent' | 'failed';
+const SEND_LOCK_BYPASS_EMAIL = 'pritamneog29@gmail.com';
+
+export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [senderName, setSenderName] = useState(user?.name ?? '');
   const [senderEmail, setSenderEmail] = useState(user?.email ?? '');
@@ -39,6 +47,59 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
   const [bodyEdited, setBodyEdited] = useState(false);
   const [sending, setSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [sendState, setSendState] = useState<SendState>('idle');
+  const [sendStateText, setSendStateText] = useState('');
+  const [checkingSendEligibility, setCheckingSendEligibility] = useState(false);
+  const [hasAlreadySent, setHasAlreadySent] = useState(false);
+  const isSendLockBypassUser =
+    user?.email?.trim().toLowerCase() === SEND_LOCK_BYPASS_EMAIL;
+  const isSendLockedForUser = Boolean(user) && hasAlreadySent && !isSendLockBypassUser;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSendStatus = async () => {
+      if (!user?.uid) {
+        setHasAlreadySent(false);
+        setSendState('idle');
+        setSendStateText('');
+        return;
+      }
+
+      setCheckingSendEligibility(true);
+      try {
+        const sent = await hasUserSentOnlineMail(user.uid);
+        if (!active) {
+          return;
+        }
+
+        setHasAlreadySent(sent);
+        if (sent && !isSendLockBypassUser) {
+          setSendState('sent');
+          setSendStateText('You already sent your email from this account.');
+        } else {
+          setSendState('idle');
+          setSendStateText('');
+        }
+      } catch (e: any) {
+        if (active) {
+          setSendState('failed');
+          setSendStateText(
+            `Failed to verify send status: ${e?.message ?? 'Unknown error'}`,
+          );
+        }
+      } finally {
+        if (active) {
+          setCheckingSendEligibility(false);
+        }
+      }
+    };
+
+    void loadSendStatus();
+    return () => {
+      active = false;
+    };
+  }, [isSendLockBypassUser, user?.uid]);
 
   const getBody = () =>
     bodyEdited
@@ -103,7 +164,28 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
     }
   };
 
+  const openMailDraft = async (mailtoLink: string) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = mailtoLink;
+      return;
+    }
+
+    const canOpen = await Linking.canOpenURL(mailtoLink);
+    if (!canOpen) {
+      throw new Error('No compatible mail app was found to open this draft.');
+    }
+    await Linking.openURL(mailtoLink);
+  };
+
   const handleSend = async () => {
+    if (isSendLockedForUser) {
+      Alert.alert(
+        'Already Sent',
+        'This account has already sent the email. Sending is disabled for this user.',
+      );
+      return;
+    }
+
     if (!senderEmail.trim()) {
       Alert.alert(
         'Email Required',
@@ -113,6 +195,8 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
     }
 
     setSending(true);
+    setSendState('sending');
+    setSendStateText('Sending...');
     try {
       const recipients = [primaryRecipient, ...parseRecipients(otherRecipients)];
       const uniqueRecipients = Array.from(new Set(recipients));
@@ -126,6 +210,18 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
           bodyText,
         );
         await recordOnlineMail();
+        if (!isSendLockBypassUser) {
+          try {
+            await markUserOnlineMailSent(user.uid);
+          } catch (e: any) {
+            if (e?.code !== 'permission-denied') {
+              throw e;
+            }
+          }
+          setHasAlreadySent(true);
+        }
+        setSendState('sent');
+        setSendStateText('Sent successfully via Gmail API and counted.');
         Alert.alert(
           '✅ Email Sent!',
           'Your email was sent via your Google account and recorded.',
@@ -136,7 +232,9 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
 
       if (Platform.OS === 'web') {
         const mailtoLink = `mailto:${uniqueRecipients.join(';')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-        await Linking.openURL(mailtoLink);
+        await openMailDraft(mailtoLink);
+        setSendState('sent');
+        setSendStateText('Draft opened in your mail app.');
         Alert.alert(
           'Draft Opened',
           'Your mail app opened with a draft. Since you are not signed in with Google send permission, this web flow cannot verify sent status automatically.',
@@ -159,19 +257,44 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
 
         if (result.status === MailComposer.MailComposerStatus.SENT) {
           await recordOnlineMail();
+          if (user?.uid && !isSendLockBypassUser) {
+            try {
+              await markUserOnlineMailSent(user.uid);
+            } catch (e: any) {
+              if (e?.code !== 'permission-denied') {
+                throw e;
+              }
+            }
+            setHasAlreadySent(true);
+          }
+          setSendState('sent');
+          setSendStateText('Sent successfully and counted.');
           Alert.alert(
             '✅ Email Sent!',
             'Thank you for speaking up for Kaziranga. Your message has been sent and recorded.',
             [{ text: 'Go Back', onPress: onBack }],
           );
         } else if (result.status === MailComposer.MailComposerStatus.CANCELLED) {
-          // User cancelled — no action needed
+          setSendState('idle');
+          setSendStateText('Send cancelled.');
         } else {
+          setSendState('failed');
+          setSendStateText('Send status could not be confirmed.');
           Alert.alert('Unknown Status', 'The email status could not be confirmed.');
         }
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Could not open mail composer.');
+      const message = e?.message ?? 'Could not send email.';
+      setSendState('failed');
+      setSendStateText(`Failed: ${message}`);
+      if (message.includes('Gmail API send failed (403)')) {
+        Alert.alert(
+          'Permission Not Granted Yet',
+          'Google blocked Gmail API send for this app right now (usually because the app is unverified or consent was not fully granted). Please continue from the warning screen with "unsafe", ensure your account is added as a test user, then try again.',
+        );
+      } else {
+        Alert.alert('Error', message);
+      }
     } finally {
       setSending(false);
     }
@@ -204,7 +327,7 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
 
-      <AppHeader size="small" />
+      <AppHeader size="small" onPressHome={onHome} />
 
       <Text style={styles.screenTitle}>📧 Compose Email</Text>
       
@@ -332,12 +455,28 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       )}
 
       <ActionButton
-        label="Send Email"
+        label={isSendLockedForUser ? 'Email Already Sent' : 'Send Email'}
         onPress={handleSend}
         loading={sending}
+        disabled={checkingSendEligibility || isSendLockedForUser}
         variant="primary"
         icon="📨"
       />
+
+      {sendState !== 'idle' && (
+        <View
+          style={[
+            styles.statusBox,
+            sendState === 'sending'
+              ? styles.statusSending
+              : sendState === 'sent'
+              ? styles.statusSent
+              : styles.statusFailed,
+          ]}
+        >
+          <Text style={styles.statusText}>{sendStateText}</Text>
+        </View>
+      )}
 
       <Text style={styles.disclaimer}>
         Signed-in users send through Gmail API with delivery confirmation.
@@ -487,6 +626,30 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginBottom: 14,
     fontStyle: 'italic',
+  },
+  statusBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  statusSending: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#64B5F6',
+  },
+  statusSent: {
+    backgroundColor: '#E8F5E9',
+    borderColor: '#81C784',
+  },
+  statusFailed: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#E57373',
+  },
+  statusText: {
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
   },
   disclaimer: {
     fontSize: 11,

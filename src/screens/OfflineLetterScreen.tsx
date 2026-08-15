@@ -21,9 +21,10 @@ import { DIRECTOR_EMAIL } from '../config/emailTemplate';
 interface Props {
   user: { uid: string; name: string; email: string; photoUrl?: string } | null;
   onBack: () => void;
+  onHome: () => void;
 }
 
-export default function OfflineLetterScreen({ user, onBack }: Props) {
+export default function OfflineLetterScreen({ user, onBack, onHome }: Props) {
   const [letterText, setLetterText] = useState(
     DEFAULT_OFFLINE_LETTER(user?.name ?? 'Concerned Citizen'),
   );
@@ -131,7 +132,7 @@ export default function OfflineLetterScreen({ user, onBack }: Props) {
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
 
-      <AppHeader size="small" />
+      <AppHeader size="small" onPressHome={onHome} />
 
       <Text style={styles.screenTitle}>✍️ Offline Letter</Text>
       <Text style={styles.screenSubtitle}>

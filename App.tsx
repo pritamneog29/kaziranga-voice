@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView, StyleSheet, StatusBar, Alert } from 'react-native';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import EmailComposerScreen from './src/screens/EmailComposerScreen';
 import OfflineLetterScreen from './src/screens/OfflineLetterScreen';
 import LetterHistoryScreen from './src/screens/LetterHistoryScreen';
 import { COLORS } from './src/config/theme';
+import { auth } from './src/config/firebase';
 
 type Screen = 'login' | 'home' | 'email' | 'offline' | 'letterHistory';
 
@@ -26,9 +28,18 @@ export default function App() {
     setScreen('home');
   };
 
-  const handleSignOut = () => {
-    setUser(null);
-    setScreen('login');
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+    } catch (error: any) {
+      Alert.alert(
+        'Sign-out Issue',
+        error?.message ?? 'Could not fully sign out from Google session.',
+      );
+    } finally {
+      setUser(null);
+      setScreen('login');
+    }
   };
 
   const handleContinueAsGuest = () => {
@@ -51,14 +62,24 @@ export default function App() {
           onNavigateEmail={() => setScreen('email')}
           onNavigateOffline={() => setScreen('offline')}
           onNavigateLetterHistory={() => setScreen('letterHistory')}
-          onSignOut={handleSignOut}
+          onSignOut={() => {
+            void handleSignOut();
+          }}
         />
       )}
       {screen === 'email' && (
-        <EmailComposerScreen user={user} onBack={() => setScreen('home')} />
+        <EmailComposerScreen
+          user={user}
+          onBack={() => setScreen('home')}
+          onHome={() => setScreen('home')}
+        />
       )}
       {screen === 'offline' && (
-        <OfflineLetterScreen user={user} onBack={() => setScreen('home')} />
+        <OfflineLetterScreen
+          user={user}
+          onBack={() => setScreen('home')}
+          onHome={() => setScreen('home')}
+        />
       )}
       {screen === 'letterHistory' && (
         <LetterHistoryScreen user={user} onBack={() => setScreen('home')} />

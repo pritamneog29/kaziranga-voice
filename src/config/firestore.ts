@@ -23,6 +23,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const COUNTER_REF = doc(db, 'stats', 'mail_counter');
+const USER_ONLINE_MAIL_STATUS_COLLECTION = 'user_online_mail_status';
 
 export interface MailStats {
   total: number;
@@ -63,6 +64,37 @@ export async function recordOnlineMail(): Promise<void> {
     online_count: increment(1),
     last_updated: serverTimestamp(),
   });
+}
+
+/** Mark that a user has already sent an online mail. */
+export async function markUserOnlineMailSent(userId: string): Promise<void> {
+  const statusRef = doc(db, USER_ONLINE_MAIL_STATUS_COLLECTION, userId);
+  await setDoc(
+    statusRef,
+    {
+      sent: true,
+      sentAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+/** Check whether a user has already sent an online mail. */
+export async function hasUserSentOnlineMail(userId: string): Promise<boolean> {
+  try {
+    const statusRef = doc(db, USER_ONLINE_MAIL_STATUS_COLLECTION, userId);
+    const snap = await getDoc(statusRef);
+    if (!snap.exists()) {
+      return false;
+    }
+    return Boolean(snap.data().sent);
+  } catch (error: any) {
+    // If rules are not yet updated for this collection, keep send unlocked.
+    if (error?.code === 'permission-denied') {
+      return false;
+    }
+    throw error;
+  }
 }
 
 /** Increment the offline letter counter and store letter + photo. */
