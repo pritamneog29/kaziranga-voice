@@ -37,10 +37,11 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     scopes: ['profile', 'email'],
-    redirectUri: AuthSession.makeRedirectUri({
-      scheme: undefined,
-      path: 'callback',
-    }),
+    redirectUri: Platform.OS === 'web' 
+      ? typeof window !== 'undefined' ? window.location.origin : 'https://kazirangavoice.in'
+      : AuthSession.makeRedirectUri({
+          scheme: undefined,
+        }),
   });
 
   React.useEffect(() => {

@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
 import { COLORS } from '../config/theme';
@@ -67,24 +68,17 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       const recipients = [primaryRecipient, ...parseRecipients(otherRecipients)];
       const uniqueRecipients = Array.from(new Set(recipients));
 
-      const result = await MailComposer.composeAsync({
-        recipients: uniqueRecipients,
-        subject,
-        body: getBody(),
-      });
-
-      if (result.status === MailComposer.MailComposerStatus.SENT) {
-        await recordOnlineMail();
-        Alert.alert(
-          '✅ Email Sent!',
-          'Thank you for speaking up for Kaziranga. Your message has been sent and recorded.',
-          [{ text: 'Go Back', onPress: onBack }],
-        );
-      } else if (result.status === MailComposer.MailComposerStatus.CANCELLED) {
-        // User cancelled — no action needed
-      } else {
-        Alert.alert('Unknown Status', 'The email status could not be confirmed.');
-      }
+      // Use Linking API for proper mailto handling on all platforms (web, native, etc)
+      const bodyText = getBody();
+      const mailtoLink = `mailto:${uniqueRecipients.join(';')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+      
+      await Linking.openURL(mailtoLink);
+      await recordOnlineMail();
+      Alert.alert(
+        '✅ Email Sent!',
+        'Thank you for speaking up for Kaziranga. Your message has been sent and recorded.',
+        [{ text: 'Go Back', onPress: onBack }],
+      );
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Could not open mail composer.');
     } finally {
