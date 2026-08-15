@@ -66,6 +66,9 @@ export default function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,

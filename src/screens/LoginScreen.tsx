@@ -91,6 +91,17 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
         </Text>
       </View>
 
+      <View style={styles.calloutBox}>
+        <Text style={styles.calloutTitle}>Protect Indigenous Lands</Text>
+        <Text style={styles.calloutText}>
+          Indigenous advocates such as Pranab Doley from the Mising community
+          have helped spotlight that the land around Kaziranga is not just
+          habitat, but homeland. The proposed hotel development must not
+          silence indigenous voices or override their land, livelihood,
+          cultural, and customary rights.
+        </Text>
+      </View>
+
       <View style={styles.factsBox}>
         <Text style={styles.factTitle}>Did you know?</Text>
         <Text style={styles.factItem}>🦏 Kaziranga hosts ~2,600 one-horned rhinos — 70% of the world's population.</Text>
@@ -155,6 +166,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   bold: { fontWeight: '700' },
+  calloutBox: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 18,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.accent,
+  },
+  calloutTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#B45309',
+    marginBottom: 6,
+  },
+  calloutText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.textPrimary,
+  },
   factsBox: {
     backgroundColor: '#FFF8E1',
     borderRadius: 14,

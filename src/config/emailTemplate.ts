@@ -33,12 +33,14 @@ Reports of proposals to reduce or dilute the ESZ notification area are deeply al
   - Violates the spirit and intent of the National Green Tribunal (NGT) and Supreme Court orders protecting biodiversity-sensitive areas.
   - Sets a dangerous precedent for other protected areas across India.
 
-**2. Proposed Hyatt Hotel on Indigenous Lands**
+**2. Protection of Indigenous Lands and Communities**
 
-Reports further indicate that a luxury hotel — reportedly a Hyatt property — is being proposed for construction in the vicinity of the national park on land traditionally inhabited and used by indigenous communities. This raises grave concerns:
+Reports further indicate that a luxury hotel — reportedly a Hyatt property — is being proposed for construction in the vicinity of the national park on land traditionally inhabited, used, and cared for by indigenous communities. This raises grave concerns that go beyond ecology alone:
 
-  - Indigenous communities — including the Mising, Karbi, and other forest-dwelling peoples — have custodial relationships with these lands going back generations. Their rights under the Scheduled Tribes and Other Traditional Forest Dwellers (Recognition of Forest Rights) Act, 2006, must be upheld.
-  - Construction of large hospitality infrastructure on or near such ecologically sensitive and socially significant land will increase traffic, noise, light pollution, waste generation, and human–wildlife conflict.
+  - Indigenous communities — including the Mising, Karbi, and other forest-dwelling peoples — have custodial relationships with these lands going back generations. Their land, livelihood, cultural, and customary rights under the Scheduled Tribes and Other Traditional Forest Dwellers (Recognition of Forest Rights) Act, 2006, must be upheld.
+  - No development should proceed without full, prior, and meaningful consultation with the affected indigenous communities, and without their informed consent where applicable.
+  - Construction of large hospitality infrastructure on or near such ecologically sensitive and socially significant land will increase traffic, noise, light pollution, waste generation, and human–wildlife conflict, while also risking displacement and cultural erosion.
+  - Indigenous land-rights advocates such as Pranab Doley, from the Mising community, have been crucial in drawing attention to these threats.
   - This undermines India's international commitments under the Convention on Biological Diversity (CBD) and UNESCO's obligations for World Heritage Sites.
 
 **My Personal Connection to Kaziranga**
@@ -50,7 +52,7 @@ ${personalExperience.trim() || '[No personal experience shared.]'}
 I respectfully urge you to:
   1. Actively oppose and formally object to any reduction of the ESZ boundaries surrounding Kaziranga National Park.
   2. Ensure that all ongoing and proposed hotel or commercial construction projects within or adjacent to the ESZ undergo rigorous, transparent Environmental Impact Assessments with full community consultation.
-  3. Safeguard the land and livelihood rights of indigenous communities in the region.
+  3. Safeguard the land, livelihood, cultural, and customary rights of indigenous communities in the region, and ensure no project proceeds without their meaningful participation.
   4. Strengthen wildlife corridors connecting Kaziranga to the Karbi Anglong hills to ensure safe annual migration of the park's wildlife.
   5. Keep the public and civil society informed of all decisions regarding the ESZ.
 

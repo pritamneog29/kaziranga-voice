@@ -132,7 +132,9 @@ export default function OfflineLetterScreen({ user, onBack }: Props) {
       <Text style={styles.screenTitle}>✍️ Offline Letter</Text>
       <Text style={styles.screenSubtitle}>
         Draft a letter to post to the Director of Kaziranga National Park.
-        Photograph your signed letter to record your action.
+        Photograph your signed letter to record your action. You can also
+        mention indigenous land-rights advocates like Pranab Doley if it fits
+        your personal message.
       </Text>
 
       <View style={styles.addressBox}>

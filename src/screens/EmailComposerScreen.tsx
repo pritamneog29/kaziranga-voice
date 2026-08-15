@@ -25,6 +25,7 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [senderName, setSenderName] = useState(user?.name ?? '');
   const [senderEmail, setSenderEmail] = useState(user?.email ?? '');
+  const [otherRecipients, setOtherRecipients] = useState('');
   const [personalExperience, setPersonalExperience] = useState('');
   const [body, setBody] = useState('');
   const [bodyEdited, setBodyEdited] = useState(false);
@@ -35,6 +36,12 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
     bodyEdited
       ? body
       : buildDefaultBody(personalExperience, senderName, senderEmail);
+
+  const parseRecipients = (value: string): string[] =>
+    value
+      .split(/[,\n;]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
 
   const handleSend = async () => {
     if (!senderEmail.trim()) {
@@ -56,8 +63,11 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
 
     setSending(true);
     try {
+      const recipients = [DIRECTOR_EMAIL, ...parseRecipients(otherRecipients)];
+      const uniqueRecipients = Array.from(new Set(recipients));
+
       const result = await MailComposer.composeAsync({
-        recipients: [DIRECTOR_EMAIL],
+        recipients: uniqueRecipients,
         subject,
         body: getBody(),
       });
@@ -112,6 +122,20 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
 
       <Text style={styles.screenTitle}>📧 Compose Email</Text>
       <Text style={styles.recipientBadge}>To: {DIRECTOR_EMAIL}</Text>
+      <Text style={styles.recipientHint}>
+        Add additional recipients below if you want to copy others in the message.
+      </Text>
+
+      <Text style={styles.label}>Additional Recipients</Text>
+      <TextInput
+        style={styles.input}
+        value={otherRecipients}
+        onChangeText={setOtherRecipients}
+        placeholder="comma-separated emails, e.g. local.officer@example.com, activist@example.org"
+        placeholderTextColor={COLORS.textMuted}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
 
       <Text style={styles.senderNote}>
         {user
@@ -154,8 +178,9 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
         <Text style={styles.experienceTitle}>🌿 Your Personal Experience at Kaziranga</Text>
         <Text style={styles.experienceHint}>
           Have you visited Kaziranga? Share a memory, a sighting, or what this
-          place means to you. This personal touch makes your message more
-          powerful. (Optional)
+          place means to you. If you have a connection with the indigenous
+          communities or their lands, please mention that too. This personal
+          touch makes your message more powerful. (Optional)
         </Text>
         <TextInput
           style={styles.experienceInput}
@@ -202,7 +227,8 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       {!bodyEdited && (
         <Text style={styles.editHint}>
           ✏️ Tap the body above to personalise it. Your personal experience
-          section above is automatically included.
+          section above is automatically included, and the letter already
+          includes stronger language on indigenous land rights.
         </Text>
       )}
 
@@ -250,6 +276,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignSelf: 'flex-start',
     marginBottom: 16,
+  },
+  recipientHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 8,
+    lineHeight: 17,
   },
   senderNote: {
     fontSize: 12,

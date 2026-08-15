@@ -35,6 +35,17 @@ export default function HomeScreen({
         {user ? user.email : 'You can still send/record actions without signing in.'}
       </Text>
 
+      <View style={styles.calloutBox}>
+        <Text style={styles.calloutTitle}>Protect Indigenous Lands</Text>
+        <Text style={styles.calloutText}>
+          Kaziranga’s surrounding indigenous lands are not just real estate —
+          they are living homelands with rights, memory, and stewardship.
+          Indigenous land-rights advocates such as Pranab Doley have helped
+          show that the proposed hotel construction there must not override the
+          voices of Mising, Karbi, and other local communities.
+        </Text>
+      </View>
+
       <ImpactCounter />
 
       <View style={styles.actionsHeading}>
@@ -46,7 +57,8 @@ export default function HomeScreen({
         <Text style={styles.actionCardTitle}>Send an Email</Text>
         <Text style={styles.actionCardDesc}>
           Compose a pre-filled email to the Director of Kaziranga National Park.
-          You can personalise it with your own experiences before sending.
+          You can personalise it with your own experiences and highlight
+          indigenous land rights before sending.
         </Text>
         <ActionButton
           label="Compose Email"
@@ -61,7 +73,8 @@ export default function HomeScreen({
         <Text style={styles.actionCardTitle}>Record Offline Letter</Text>
         <Text style={styles.actionCardDesc}>
           Drafted a physical letter to post? Take a photo of it and we'll log
-          your offline action in our records.
+          your offline action in our records, including support for indigenous
+          land protection.
         </Text>
         <ActionButton
           label="Record Offline Letter"
@@ -78,8 +91,10 @@ export default function HomeScreen({
           During annual Brahmaputra floods, animals migrate south through the
           ESZ to the Karbi Anglong hills. Any reduction in this buffer zone
           blocks those corridors, leaving animals stranded. Luxury hotel
-          construction on indigenous lands further erodes the fragile
-          socio-ecological balance that protects this UNESCO World Heritage Site.
+          construction on indigenous lands threatens the rights, culture,
+          livelihood, and stewardship of indigenous communities, and it further
+          erodes the fragile socio-ecological balance that protects this UNESCO
+          World Heritage Site.
         </Text>
       </View>
 
@@ -111,6 +126,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textMuted,
     marginBottom: 4,
+  },
+  calloutBox: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 14,
+    marginBottom: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.accent,
+  },
+  calloutTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#B45309',
+    marginBottom: 6,
+  },
+  calloutText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.textPrimary,
   },
   actionsHeading: { marginTop: 8, marginBottom: 4 },
   actionsTitle: {
