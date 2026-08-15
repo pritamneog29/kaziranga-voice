@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, useWindowDimensions } from 'react-native';
 import { COLORS } from '../config/theme';
 import { subscribeToStats, MailStats } from '../config/firestore';
 
 export default function ImpactCounter() {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const [stats, setStats] = useState<MailStats>({
     total: 0,
     last_updated: null,
@@ -51,7 +53,7 @@ export default function ImpactCounter() {
   }, [stats]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, !isWide && styles.containerNarrow]}>
       <View style={styles.headingRow}>
         <Text style={styles.heading}>Campaign activity</Text>
         <View style={styles.liveBadge}>
@@ -95,6 +97,11 @@ const styles = StyleSheet.create({
     minHeight: 360,
     justifyContent: 'space-between',
     overflow: 'hidden',
+  },
+  containerNarrow: {
+    minHeight: 280,
+    marginVertical: 12,
+    paddingVertical: 16,
   },
   headingRow: {
     flexDirection: 'row',

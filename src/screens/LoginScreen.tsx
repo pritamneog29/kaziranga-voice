@@ -108,7 +108,7 @@ export default function LoginScreen({ onSignIn }: Props) {
           isWide && { minHeight: magazineMinHeight },
         ]}
       >
-        <View style={styles.mainColumn}>
+        <View style={[styles.mainColumn, !isWide && styles.mainColumnNarrow]}>
           <View style={[styles.storyCard, styles.storyGreen]}>
             <Text style={styles.storyTitle}>Protect Kaziranga</Text>
             <Text style={styles.storyText}>
@@ -145,7 +145,7 @@ export default function LoginScreen({ onSignIn }: Props) {
           </View>
         </View>
 
-        <View style={styles.sideColumn}>
+        <View style={[styles.sideColumn, !isWide && styles.sideColumnNarrow]}>
           <ImpactCounter />
 
           <View style={[styles.storyCard, styles.storyNeutral, styles.ctaCard]}>
@@ -201,16 +201,36 @@ const styles = StyleSheet.create({
   },
   magazineNarrow: {
     flexDirection: 'column',
+    alignItems: 'stretch',
   },
   mainColumn: {
     flex: 0.96,
     maxWidth: 640,
     gap: 12,
   },
+  mainColumnNarrow: {
+    flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+  },
   sideColumn: {
     flex: 0.72,
     maxWidth: 360,
     gap: 12,
+  },
+  sideColumnNarrow: {
+    flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+    marginTop: 12,
   },
   ctaCard: {
     flex: 1,

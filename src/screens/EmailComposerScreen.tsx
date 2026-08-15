@@ -288,7 +288,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
         <Text style={styles.screenTitle}>📧 Compose Email</Text>
         <View style={[styles.magazineLayout, isWide ? styles.magazineWide : styles.magazineNarrow]}>
-          <View style={styles.mainColumn}>
+          <View style={[styles.mainColumn, !isWide && styles.mainColumnNarrow]}>
             <Text style={styles.label}>Primary Recipient (To:)</Text>
             <TextInput
               style={styles.input}
@@ -437,7 +437,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
             </Text>
           </View>
 
-          <View style={styles.sideColumn}>
+          <View style={[styles.sideColumn, !isWide && styles.sideColumnNarrow]}>
             <ImpactCounter />
 
             <View style={[styles.storyCard, styles.storyBlue]}>
@@ -497,16 +497,36 @@ const styles = StyleSheet.create({
   },
   magazineNarrow: {
     flexDirection: 'column',
+    alignItems: 'stretch',
   },
   mainColumn: {
     flex: 0.96,
     maxWidth: 820,
     gap: 10,
   },
+  mainColumnNarrow: {
+    flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+  },
   sideColumn: {
     flex: 1,
     maxWidth: 400,
     gap: 14,
+  },
+  sideColumnNarrow: {
+    flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+    marginTop: 12,
   },
   storyCard: {
     backgroundColor: COLORS.surface,

@@ -9,7 +9,16 @@ export const buildDefaultBody = (
   personalExperience: string,
   senderName: string,
   senderEmail: string,
-): string => `
+): string => {
+  const personalSection = personalExperience.trim()
+    ? `**My Personal Connection to Kaziranga**
+
+${personalExperience.trim()}
+
+`
+    : '';
+
+  return `
 To,
 The Director,
 Kaziranga National Park & Tiger Reserve,
@@ -43,11 +52,7 @@ Reports further indicate that a luxury hotel — reportedly a Hyatt property —
   - Indigenous land-rights advocates such as Pranab Doley, from the Mising community, have been crucial in drawing attention to these threats.
   - This undermines India's international commitments under the Convention on Biological Diversity (CBD) and UNESCO's obligations for World Heritage Sites.
 
-**My Personal Connection to Kaziranga**
-
-${personalExperience.trim() || '[No personal experience shared.]'}
-
-**My Requests**
+${personalSection}**My Requests**
 
 I respectfully urge you to:
   1. Actively oppose and formally object to any reduction of the ESZ boundaries surrounding Kaziranga National Park.
@@ -66,3 +71,4 @@ ${senderEmail || '[Your Contact Information]'}
 ---
 Sent via Kaziranga Voice — A citizen-action app for wildlife conservation.
 `.trimStart();
+};
