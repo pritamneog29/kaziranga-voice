@@ -213,7 +213,7 @@ export default function OfflineLetterScreen({ user, onBack, onHome }: Props) {
 const DEFAULT_OFFLINE_LETTER = (name: string) => `To,
 The Director,
 Kaziranga National Park & Tiger Reserve,
-Bokakhat, Golaghat, Assam – 785 612
+Bokakhat, Golaghat, Assam – 785612
 
 Subject: Urgent Concern Regarding Reduction of Eco-Sensitive Zone & Hotel Construction
 
