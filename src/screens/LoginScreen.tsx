@@ -19,7 +19,13 @@ import ActionButton from '../components/ActionButton';
 WebBrowser.maybeCompleteAuthSession();
 
 interface Props {
-  onSignIn: (user: { uid: string; name: string; email: string; photoUrl?: string }) => void;
+  onSignIn: (user: {
+    uid: string;
+    name: string;
+    email: string;
+    photoUrl?: string;
+    googleAccessToken?: string;
+  }) => void;
   onContinueAsGuest: () => void;
 }
 
@@ -36,7 +42,7 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
     clientId: EXPO_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
-    scopes: ['profile', 'email'],
+    scopes: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send'],
     redirectUri: Platform.OS === 'web' 
       ? typeof window !== 'undefined' ? window.location.origin : 'https://kazirangavoice.in'
       : AuthSession.makeRedirectUri({
@@ -70,6 +76,7 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
         name: data.name,
         email: data.email,
         photoUrl: data.picture,
+        googleAccessToken: token,
       });
     } catch {
       Alert.alert('Error', 'Could not retrieve user info. Please try again.');

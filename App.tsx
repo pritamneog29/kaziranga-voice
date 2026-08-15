@@ -14,6 +14,7 @@ interface User {
   name: string;
   email: string;
   photoUrl?: string;
+  googleAccessToken?: string;
 }
 
 export default function App() {

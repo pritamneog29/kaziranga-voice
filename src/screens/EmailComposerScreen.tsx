@@ -18,7 +18,13 @@ import { DIRECTOR_EMAIL, DEFAULT_SUBJECT, buildDefaultBody } from '../config/ema
 import { recordOnlineMail } from '../config/firestore';
 
 interface Props {
-  user: { uid: string; name: string; email: string; photoUrl?: string } | null;
+  user: {
+    uid: string;
+    name: string;
+    email: string;
+    photoUrl?: string;
+    googleAccessToken?: string;
+  } | null;
   onBack: () => void;
 }
 
@@ -45,6 +51,58 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       .map((item) => item.trim())
       .filter(Boolean);
 
+  const encodeBase64Url = (text: string): string => {
+    if (typeof globalThis.btoa !== 'function') {
+      throw new Error('Base64 encoder is not available on this device.');
+    }
+    const binaryUtf8 = encodeURIComponent(text).replace(
+      /%([0-9A-F]{2})/g,
+      (_, hex: string) => String.fromCharCode(parseInt(hex, 16)),
+    );
+    return globalThis
+      .btoa(binaryUtf8)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+  };
+
+  const sendViaGmailApi = async (
+    accessToken: string,
+    recipients: string[],
+    currentSubject: string,
+    currentBody: string,
+  ) => {
+    const rfc822Message = [
+      `To: ${recipients.join(', ')}`,
+      `Subject: ${currentSubject}`,
+      `Reply-To: ${senderEmail.trim()}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset="UTF-8"',
+      '',
+      currentBody,
+    ].join('\r\n');
+
+    const raw = encodeBase64Url(rfc822Message);
+    const response = await fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ raw }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Gmail API send failed (${response.status}): ${errorText || 'Unknown error'}`,
+      );
+    }
+  };
+
   const handleSend = async () => {
     if (!senderEmail.trim()) {
       Alert.alert(
@@ -54,31 +112,64 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       return;
     }
 
-    const available = await MailComposer.isAvailableAsync();
-    if (!available) {
-      Alert.alert(
-        'No Email App Found',
-        'Please install a mail app (Gmail, Outlook) and try again, or use the offline letter option.',
-      );
-      return;
-    }
-
     setSending(true);
     try {
       const recipients = [primaryRecipient, ...parseRecipients(otherRecipients)];
       const uniqueRecipients = Array.from(new Set(recipients));
-
-      // Use Linking API for proper mailto handling on all platforms (web, native, etc)
       const bodyText = getBody();
-      const mailtoLink = `mailto:${uniqueRecipients.join(';')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-      
-      await Linking.openURL(mailtoLink);
-      await recordOnlineMail();
-      Alert.alert(
-        '✅ Email Sent!',
-        'Thank you for speaking up for Kaziranga. Your message has been sent and recorded.',
-        [{ text: 'Go Back', onPress: onBack }],
-      );
+
+      if (user?.googleAccessToken) {
+        await sendViaGmailApi(
+          user.googleAccessToken,
+          uniqueRecipients,
+          subject,
+          bodyText,
+        );
+        await recordOnlineMail();
+        Alert.alert(
+          '✅ Email Sent!',
+          'Your email was sent via your Google account and recorded.',
+          [{ text: 'Go Back', onPress: onBack }],
+        );
+        return;
+      }
+
+      if (Platform.OS === 'web') {
+        const mailtoLink = `mailto:${uniqueRecipients.join(';')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+        await Linking.openURL(mailtoLink);
+        Alert.alert(
+          'Draft Opened',
+          'Your mail app opened with a draft. Since you are not signed in with Google send permission, this web flow cannot verify sent status automatically.',
+        );
+      } else {
+        const available = await MailComposer.isAvailableAsync();
+        if (!available) {
+          Alert.alert(
+            'No Email App Found',
+            'Please install a mail app (Gmail, Outlook) and try again, or use the offline letter option.',
+          );
+          return;
+        }
+
+        const result = await MailComposer.composeAsync({
+          recipients: uniqueRecipients,
+          subject,
+          body: bodyText,
+        });
+
+        if (result.status === MailComposer.MailComposerStatus.SENT) {
+          await recordOnlineMail();
+          Alert.alert(
+            '✅ Email Sent!',
+            'Thank you for speaking up for Kaziranga. Your message has been sent and recorded.',
+            [{ text: 'Go Back', onPress: onBack }],
+          );
+        } else if (result.status === MailComposer.MailComposerStatus.CANCELLED) {
+          // User cancelled — no action needed
+        } else {
+          Alert.alert('Unknown Status', 'The email status could not be confirmed.');
+        }
+      }
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Could not open mail composer.');
     } finally {
@@ -249,9 +340,8 @@ export default function EmailComposerScreen({ user, onBack }: Props) {
       />
 
       <Text style={styles.disclaimer}>
-        Tapping "Send Email" will open your device's mail app pre-filled with
-        this message. Once you send from there, the action will be recorded in
-        our counter.
+        Signed-in users send through Gmail API with delivery confirmation.
+        Unsigned web users open a mail draft and are not auto-counted.
       </Text>
     </ScrollView>
   );
