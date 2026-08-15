@@ -13,7 +13,7 @@ export const buildDefaultBody = (
 To,
 The Director,
 Kaziranga National Park & Tiger Reserve,
-Bokakhat, Golaghat, Assam – 785 612
+Bokakhat, Golaghat, Assam – 785612
 
 Subject: ${DEFAULT_SUBJECT}
 

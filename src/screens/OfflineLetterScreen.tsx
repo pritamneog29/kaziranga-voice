@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -33,6 +33,20 @@ export default function OfflineLetterScreen({ user, onBack, onHome }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
+
+  useEffect(() => {
+    if (!user) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in with Google to record an offline letter. Guest mode is view-only.',
+        [{ text: 'OK', onPress: onBack }],
+      );
+    }
+  }, [onBack, user]);
+
+  if (!user) {
+    return null;
+  }
 
   const openCamera = async () => {
     if (!permission?.granted) {
@@ -77,10 +91,6 @@ export default function OfflineLetterScreen({ user, onBack, onHome }: Props) {
         'Photo Required',
         'Please take or upload a photo of your letter before submitting.',
       );
-      return;
-    }
-    if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to submit your offline letter.');
       return;
     }
     setSubmitting(true);

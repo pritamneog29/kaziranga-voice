@@ -56,6 +56,16 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const isSendLockedForUser = Boolean(user) && hasAlreadySent && !isSendLockBypassUser;
 
   useEffect(() => {
+    if (!user) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in with Google to send an email. Guest mode is view-only.',
+        [{ text: 'OK', onPress: onBack }],
+      );
+    }
+  }, [onBack, user]);
+
+  useEffect(() => {
     let active = true;
 
     const loadSendStatus = async () => {
@@ -100,6 +110,10 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
       active = false;
     };
   }, [isSendLockBypassUser, user?.uid]);
+
+  if (!user) {
+    return null;
+  }
 
   const getBody = () =>
     bodyEdited

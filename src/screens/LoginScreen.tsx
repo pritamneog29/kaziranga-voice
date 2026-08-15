@@ -15,6 +15,7 @@ import { auth } from '../config/firebase';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
+import ImpactCounter from '../components/ImpactCounter';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -136,6 +137,16 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
         <Text style={styles.factItem}>🌊 The ESZ buffer is critical for flood-season wildlife migration.</Text>
       </View>
 
+      <View style={styles.trackerIntroBox}>
+        <Text style={styles.trackerIntroTitle}>Live Action Tracker</Text>
+        <Text style={styles.trackerIntroText}>
+          Watch the campaign move in real time as people send emails and record
+          posted letters for Kaziranga.
+        </Text>
+      </View>
+
+      <ImpactCounter />
+
       <Text style={styles.loginPrompt}>
         Sign in with Google to compose and send your message.
       </Text>
@@ -156,8 +167,8 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
       />
 
       <Text style={styles.privacyNote}>
-        Sign-in is optional. If you skip sign-in, you can manually enter your
-        email while composing the message. No data is shared with third parties.
+        Sign-in is required to send or record actions. Guest mode is view-only.
+        No data is shared with third parties.
       </Text>
     </ScrollView>
   );
@@ -229,6 +240,25 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 5,
     lineHeight: 20,
+  },
+  trackerIntroBox: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1E88E5',
+  },
+  trackerIntroTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0D47A1',
+    marginBottom: 6,
+  },
+  trackerIntroText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.textPrimary,
   },
   loginPrompt: {
     fontSize: 15,

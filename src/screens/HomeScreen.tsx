@@ -34,7 +34,7 @@ export default function HomeScreen({
         Welcome, {user ? user.name.split(' ')[0] : 'Guest'} 👋
       </Text>
       <Text style={styles.subGreeting}>
-        {user ? user.email : 'You can still send/record actions without signing in.'}
+        {user ? user.email : 'Guest mode is view-only. Sign in to send or record actions.'}
       </Text>
 
       <View style={styles.calloutBox}>
@@ -54,6 +54,17 @@ export default function HomeScreen({
         <Text style={styles.actionsTitle}>Take Action</Text>
       </View>
 
+      {!user && (
+        <View style={styles.guestNoticeBox}>
+          <Text style={styles.guestNoticeTitle}>Sign in required for action</Text>
+          <Text style={styles.guestNoticeText}>
+            Guest mode lets you explore the campaign details and live counters,
+            but both online email sending and offline letter recording are
+            available only after Google sign-in.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.actionCard}>
         <Text style={styles.actionCardEmoji}>📧</Text>
         <Text style={styles.actionCardTitle}>Send an Email</Text>
@@ -62,15 +73,19 @@ export default function HomeScreen({
           You can personalise it with your own experiences and highlight
           indigenous land rights before sending.
         </Text>
-        <View style={styles.buttonRow}>
-          <ActionButton
-            label="Compose Email"
-            onPress={onNavigateEmail}
-            variant="primary"
-            icon="✉️"
-            inline
-          />
-        </View>
+        {user ? (
+          <View style={styles.buttonRow}>
+            <ActionButton
+              label="Compose Email"
+              onPress={onNavigateEmail}
+              variant="primary"
+              icon="✉️"
+              inline
+            />
+          </View>
+        ) : (
+          <Text style={styles.lockedText}>Sign in with Google to unlock online sending.</Text>
+        )}
       </View>
 
       <View style={styles.actionCard}>
@@ -81,15 +96,19 @@ export default function HomeScreen({
           your offline action in our records, including support for indigenous
           land protection.
         </Text>
-        <View style={styles.buttonRow}>
-          <ActionButton
-            label="Record Offline Letter"
-            onPress={onNavigateOffline}
-            variant="secondary"
-            icon="📮"
-            inline
-          />
-        </View>
+        {user ? (
+          <View style={styles.buttonRow}>
+            <ActionButton
+              label="Record Offline Letter"
+              onPress={onNavigateOffline}
+              variant="secondary"
+              icon="📮"
+              inline
+            />
+          </View>
+        ) : (
+          <Text style={styles.lockedText}>Sign in with Google to record posted letters.</Text>
+        )}
       </View>
 
       {user && (
@@ -184,6 +203,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primaryDark,
   },
+  guestNoticeBox: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.accent,
+  },
+  guestNoticeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#8A5A00',
+    marginBottom: 6,
+  },
+  guestNoticeText: {
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
   actionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 16,
@@ -205,6 +243,12 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     lineHeight: 20,
     marginBottom: 8,
+  },
+  lockedText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginTop: 8,
   },
   buttonRow: {
     flexDirection: 'row',

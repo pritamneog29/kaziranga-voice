@@ -10,13 +10,25 @@ export default function ImpactCounter() {
     offline_count: 0,
     last_updated: null,
   });
+  const [displayedStats, setDisplayedStats] = useState({
+    total: 0,
+    online_count: 0,
+    offline_count: 0,
+  });
   const pulse = React.useRef(new Animated.Value(1)).current;
   const cardScaleOnline = React.useRef(new Animated.Value(1)).current;
   const cardScaleOffline = React.useRef(new Animated.Value(1)).current;
+  const previousStatsRef = React.useRef({
+    total: 0,
+    online_count: 0,
+    offline_count: 0,
+  });
 
   useEffect(() => {
     const unsub = subscribeToStats((s) => {
       setStats(s);
+
+      const previousStats = previousStatsRef.current;
       // Pulse animation on update
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.08, duration: 250, useNativeDriver: true }),
@@ -24,7 +36,7 @@ export default function ImpactCounter() {
       ]).start();
 
       // Card bounce on online count change
-      if (s.online_count > stats.online_count) {
+      if (s.online_count > previousStats.online_count) {
         Animated.sequence([
           Animated.timing(cardScaleOnline, { toValue: 1.12, duration: 150, useNativeDriver: true }),
           Animated.timing(cardScaleOnline, { toValue: 1, duration: 150, useNativeDriver: true }),
@@ -32,36 +44,94 @@ export default function ImpactCounter() {
       }
 
       // Card bounce on offline count change
-      if (s.offline_count > stats.offline_count) {
+      if (s.offline_count > previousStats.offline_count) {
         Animated.sequence([
           Animated.timing(cardScaleOffline, { toValue: 1.12, duration: 150, useNativeDriver: true }),
           Animated.timing(cardScaleOffline, { toValue: 1, duration: 150, useNativeDriver: true }),
         ]).start();
       }
+
+      previousStatsRef.current = {
+        total: s.total,
+        online_count: s.online_count,
+        offline_count: s.offline_count,
+      };
     });
     return unsub;
   }, []);
 
+  useEffect(() => {
+    const startValues = displayedStats;
+    const endValues = {
+      total: stats.total,
+      online_count: stats.online_count,
+      offline_count: stats.offline_count,
+    };
+
+    if (
+      startValues.total === endValues.total &&
+      startValues.online_count === endValues.online_count &&
+      startValues.offline_count === endValues.offline_count
+    ) {
+      return;
+    }
+
+    const durationMs = 1100;
+    const startTime = Date.now();
+    let frameId = 0;
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / durationMs, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+      setDisplayedStats({
+        total: Math.round(startValues.total + (endValues.total - startValues.total) * easedProgress),
+        online_count: Math.round(
+          startValues.online_count +
+            (endValues.online_count - startValues.online_count) * easedProgress,
+        ),
+        offline_count: Math.round(
+          startValues.offline_count +
+            (endValues.offline_count - startValues.offline_count) * easedProgress,
+        ),
+      });
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [stats]);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>📬 Collective Impact</Text>
+      <View style={styles.headingRow}>
+        <Text style={styles.heading}>📬 Campaign Activity</Text>
+        <View style={styles.liveBadge}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveBadgeText}>LIVE</Text>
+        </View>
+      </View>
       <Animated.View style={[styles.totalBox, { transform: [{ scale: pulse }] }]}>
-        <Text style={styles.totalNumber}>{stats.total}</Text>
-        <Text style={styles.totalLabel}>Total Actions Taken</Text>
+        <Text style={styles.totalNumber}>{displayedStats.total}</Text>
+        <Text style={styles.totalLabel}>Actions Logged</Text>
       </Animated.View>
       <View style={styles.row}>
         <Animated.View style={[styles.card, styles.onlineCard, { transform: [{ scale: cardScaleOnline }] }]}>
           <View style={styles.iconBg}>
             <Text style={styles.cardEmoji}>📧</Text>
           </View>
-          <Text style={styles.cardNumber}>{stats.online_count}</Text>
+          <Text style={styles.cardNumber}>{displayedStats.online_count}</Text>
           <Text style={styles.cardLabel}>Emails Sent</Text>
         </Animated.View>
         <Animated.View style={[styles.card, styles.offlineCard, { transform: [{ scale: cardScaleOffline }] }]}>
           <View style={styles.iconBgOrange}>
             <Text style={styles.cardEmoji}>✉️</Text>
           </View>
-          <Text style={styles.cardNumber}>{stats.offline_count}</Text>
+          <Text style={styles.cardNumber}>{displayedStats.offline_count}</Text>
           <Text style={styles.cardLabel}>Letters Posted</Text>
         </Animated.View>
       </View>
@@ -91,9 +161,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: COLORS.primaryDark,
-    marginBottom: 16,
     textAlign: 'center',
     letterSpacing: 0.5,
+  },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#A5D6A7',
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2E7D32',
+    marginRight: 6,
+  },
+  liveBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#2E7D32',
+    letterSpacing: 0.8,
   },
   totalBox: {
     backgroundColor: COLORS.primary,
