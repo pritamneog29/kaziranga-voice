@@ -4,11 +4,13 @@ import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import EmailComposerScreen from './src/screens/EmailComposerScreen';
 import OfflineLetterScreen from './src/screens/OfflineLetterScreen';
+import LetterHistoryScreen from './src/screens/LetterHistoryScreen';
 import { COLORS } from './src/config/theme';
 
-type Screen = 'login' | 'home' | 'email' | 'offline';
+type Screen = 'login' | 'home' | 'email' | 'offline' | 'letterHistory';
 
 interface User {
+  uid: string;
   name: string;
   email: string;
   photoUrl?: string;
@@ -47,6 +49,7 @@ export default function App() {
           user={user}
           onNavigateEmail={() => setScreen('email')}
           onNavigateOffline={() => setScreen('offline')}
+          onNavigateLetterHistory={() => setScreen('letterHistory')}
           onSignOut={handleSignOut}
         />
       )}
@@ -55,6 +58,9 @@ export default function App() {
       )}
       {screen === 'offline' && (
         <OfflineLetterScreen user={user} onBack={() => setScreen('home')} />
+      )}
+      {screen === 'letterHistory' && (
+        <LetterHistoryScreen user={user} onBack={() => setScreen('home')} />
       )}
     </SafeAreaView>
   );

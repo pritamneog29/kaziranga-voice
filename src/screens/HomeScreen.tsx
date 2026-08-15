@@ -12,9 +12,10 @@ import ImpactCounter from '../components/ImpactCounter';
 import ActionButton from '../components/ActionButton';
 
 interface Props {
-  user: { name: string; email: string } | null;
+  user: { uid: string; name: string; email: string; photoUrl?: string } | null;
   onNavigateEmail: () => void;
   onNavigateOffline: () => void;
+  onNavigateLetterHistory: () => void;
   onSignOut: () => void;
 }
 
@@ -22,6 +23,7 @@ export default function HomeScreen({
   user,
   onNavigateEmail,
   onNavigateOffline,
+  onNavigateLetterHistory,
   onSignOut,
 }: Props) {
   return (
@@ -60,12 +62,15 @@ export default function HomeScreen({
           You can personalise it with your own experiences and highlight
           indigenous land rights before sending.
         </Text>
-        <ActionButton
-          label="Compose Email"
-          onPress={onNavigateEmail}
-          variant="primary"
-          icon="✉️"
-        />
+        <View style={styles.buttonRow}>
+          <ActionButton
+            label="Compose Email"
+            onPress={onNavigateEmail}
+            variant="primary"
+            icon="✉️"
+            inline
+          />
+        </View>
       </View>
 
       <View style={styles.actionCard}>
@@ -76,13 +81,36 @@ export default function HomeScreen({
           your offline action in our records, including support for indigenous
           land protection.
         </Text>
-        <ActionButton
-          label="Record Offline Letter"
-          onPress={onNavigateOffline}
-          variant="secondary"
-          icon="📮"
-        />
+        <View style={styles.buttonRow}>
+          <ActionButton
+            label="Record Offline Letter"
+            onPress={onNavigateOffline}
+            variant="secondary"
+            icon="📮"
+            inline
+          />
+        </View>
       </View>
+
+      {user && (
+        <View style={styles.actionCard}>
+          <Text style={styles.actionCardEmoji}>📋</Text>
+          <Text style={styles.actionCardTitle}>View Letter History</Text>
+          <Text style={styles.actionCardDesc}>
+            See all the offline letters you've submitted, including photos and
+            metadata, to track your contribution to protecting Kaziranga.
+          </Text>
+          <View style={styles.buttonRow}>
+            <ActionButton
+              label="View Submitted Letters"
+              onPress={onNavigateLetterHistory}
+              variant="secondary"
+              icon="👁️"
+              inline
+            />
+          </View>
+        </View>
+      )}
 
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>Why This Matters</Text>
@@ -98,12 +126,15 @@ export default function HomeScreen({
         </Text>
       </View>
 
-      <ActionButton
-        label={user ? 'Sign Out' : 'Back to Login'}
-        onPress={onSignOut}
-        variant="outline"
-        icon="🚪"
-      />
+      <View style={styles.buttonRow}>
+        <ActionButton
+          label={user ? 'Sign Out' : 'Back to Login'}
+          onPress={onSignOut}
+          variant="outline"
+          icon="🚪"
+          inline
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -174,6 +205,12 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     lineHeight: 20,
     marginBottom: 8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 8,
   },
   infoBox: {
     backgroundColor: '#E8F5E9',

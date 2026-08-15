@@ -19,7 +19,7 @@ import { recordOfflineLetter } from '../config/firestore';
 import { DIRECTOR_EMAIL } from '../config/emailTemplate';
 
 interface Props {
-  user: { name: string; email: string } | null;
+  user: { uid: string; name: string; email: string; photoUrl?: string } | null;
   onBack: () => void;
 }
 
@@ -78,9 +78,13 @@ export default function OfflineLetterScreen({ user, onBack }: Props) {
       );
       return;
     }
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to submit your offline letter.');
+      return;
+    }
     setSubmitting(true);
     try {
-      await recordOfflineLetter();
+      await recordOfflineLetter(photoUri, letterText, user);
       Alert.alert(
         '✅ Letter Recorded!',
         'Your offline letter has been logged. Thank you for taking action for Kaziranga!',

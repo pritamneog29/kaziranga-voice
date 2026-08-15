@@ -8,7 +8,10 @@ import {
   Platform,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
+import { signInWithCredential, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
@@ -16,7 +19,7 @@ import ActionButton from '../components/ActionButton';
 WebBrowser.maybeCompleteAuthSession();
 
 interface Props {
-  onSignIn: (user: { name: string; email: string; photoUrl?: string }) => void;
+  onSignIn: (user: { uid: string; name: string; email: string; photoUrl?: string }) => void;
   onContinueAsGuest: () => void;
 }
 
@@ -29,11 +32,15 @@ const IOS_CLIENT_ID = '886924812961-b3oatflfqr9hrtmvf1jhdd08hrsimlcj.apps.google
 export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
   const [loading, setLoading] = useState(false);
 
-  const [, response, promptAsync] = AuthSession.useAuthRequest({
+  const [, response, promptAsync] = Google.useAuthRequest({
     clientId: EXPO_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     scopes: ['profile', 'email'],
+    redirectUri: AuthSession.makeRedirectUri({
+      scheme: undefined,
+      path: 'callback',
+    }),
   });
 
   React.useEffect(() => {
@@ -52,7 +59,17 @@ export default function LoginScreen({ onSignIn, onContinueAsGuest }: Props) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      onSignIn({ name: data.name, email: data.email, photoUrl: data.picture });
+
+      // Sign in with Firebase using the Google credential
+      const credential = GoogleAuthProvider.credential(null, token);
+      const userCredential = await signInWithCredential(auth, credential);
+
+      onSignIn({
+        uid: userCredential.user.uid,
+        name: data.name,
+        email: data.email,
+        photoUrl: data.picture,
+      });
     } catch {
       Alert.alert('Error', 'Could not retrieve user info. Please try again.');
     } finally {

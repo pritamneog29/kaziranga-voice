@@ -17,7 +17,7 @@ import { DIRECTOR_EMAIL, DEFAULT_SUBJECT, buildDefaultBody } from '../config/ema
 import { recordOnlineMail } from '../config/firestore';
 
 interface Props {
-  user: { name: string; email: string } | null;
+  user: { uid: string; name: string; email: string; photoUrl?: string } | null;
   onBack: () => void;
 }
 

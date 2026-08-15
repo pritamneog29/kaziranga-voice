@@ -15,6 +15,7 @@ interface Props {
   variant?: 'primary' | 'secondary' | 'outline';
   disabled?: boolean;
   icon?: string;
+  inline?: boolean;
 }
 
 export default function ActionButton({
@@ -24,6 +25,7 @@ export default function ActionButton({
   variant = 'primary',
   disabled = false,
   icon,
+  inline = false,
 }: Props) {
   const bg =
     variant === 'primary'
@@ -45,7 +47,7 @@ export default function ActionButton({
       onPress={onPress}
       disabled={disabled || loading}
       style={[
-        styles.button,
+        inline ? styles.buttonInline : styles.button,
         { backgroundColor: bg },
         borderStyle,
         (disabled || loading) && styles.disabled,
@@ -80,6 +82,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
+  },
+  buttonInline: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    flexShrink: 1,
   },
   disabled: { opacity: 0.5 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
