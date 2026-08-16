@@ -34,7 +34,6 @@ interface Props {
 }
 
 type SendState = 'idle' | 'sending' | 'sent' | 'failed';
-const SEND_LOCK_BYPASS_EMAIL = 'pritamneog29@gmail.com';
 
 export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const { width } = useWindowDimensions();
@@ -53,9 +52,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const [sendStateText, setSendStateText] = useState('');
   const [checkingSendEligibility, setCheckingSendEligibility] = useState(false);
   const [hasAlreadySent, setHasAlreadySent] = useState(false);
-  const isSendLockBypassUser =
-    user?.email?.trim().toLowerCase() === SEND_LOCK_BYPASS_EMAIL;
-  const isSendLockedForUser = Boolean(user) && hasAlreadySent && !isSendLockBypassUser;
+  const isSendLockedForUser = hasAlreadySent;
 
   useEffect(() => {
     if (!user) {
@@ -86,7 +83,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
         }
 
         setHasAlreadySent(sent);
-        if (sent && !isSendLockBypassUser) {
+        if (sent) {
           setSendState('sent');
           setSendStateText('You already sent your email from this account.');
         } else {
@@ -111,7 +108,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     return () => {
       active = false;
     };
-  }, [isSendLockBypassUser, user?.uid]);
+  }, [user?.uid]);
 
   if (!user) {
     return null;
@@ -224,14 +221,12 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
       } catch (e: any) {
        console.error('Record mail failed:', e);
       }
-      if (!isSendLockBypassUser) {
-       try {
-         await markUserOnlineMailSent(user.uid);
-       } catch (e: any) {
-         console.warn('Mark send failed (non-critical):', e?.message);
-       }
-       setHasAlreadySent(true);
+      try {
+       await markUserOnlineMailSent(user.uid);
+      } catch (e: any) {
+       console.warn('Mark send failed (non-critical):', e?.message);
       }
+      setHasAlreadySent(true);
       setSendState('sent');
       setSendStateText('Sent successfully via Gmail API and counted.');
       Alert.alert(
@@ -411,7 +406,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
               label={isSendLockedForUser ? 'Email Already Sent' : 'Send Email'}
               onPress={handleSend}
               loading={sending}
-              disabled={checkingSendEligibility || isSendLockedForUser}
+              disabled={sending || checkingSendEligibility || isSendLockedForUser}
               variant="primary"
               icon="📨"
             />
