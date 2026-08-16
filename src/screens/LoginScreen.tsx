@@ -41,17 +41,22 @@ export default function LoginScreen({ onSignIn }: Props) {
   const { width, height } = useWindowDimensions();
   const isWide = width >= 900;
   const magazineMinHeight = Math.max(620, Math.round(height * 0.72));
+  const webRedirectUri =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : 'https://kazirangavoice.in/app';
 
   const [, response, promptAsync] = Google.useAuthRequest({
     clientId: EXPO_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     scopes: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send'],
-    redirectUri: Platform.OS === 'web' 
-      ? typeof window !== 'undefined' ? window.location.origin : 'https://kazirangavoice.in'
-      : AuthSession.makeRedirectUri({
-          scheme: undefined,
-        }),
+    redirectUri:
+      Platform.OS === 'web'
+        ? webRedirectUri
+        : AuthSession.makeRedirectUri({
+            scheme: undefined,
+          }),
   });
 
   React.useEffect(() => {
