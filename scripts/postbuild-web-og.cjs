@@ -5,6 +5,7 @@ const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const publicDir = path.join(rootDir, 'public');
 const indexPath = path.join(distDir, 'index.html');
+const appPath = path.join(distDir, 'app.html');
 const sourceImagePath = path.join(rootDir, 'assets', 'og-kaziranga-voice.png');
 const outputImagePath = path.join(distDir, 'og-kaziranga-voice.png');
 const siteUrl = 'https://kazirangavoice.in';
@@ -40,8 +41,13 @@ if (blockRegex.test(html)) {
   throw new Error(`Could not find </head> in ${indexPath}.`);
 }
 
-fs.writeFileSync(indexPath, html, 'utf8');
+// Save React app as app.html instead of index.html
+fs.writeFileSync(appPath, html, 'utf8');
 fs.copyFileSync(sourceImagePath, outputImagePath);
+
+console.log(`Saved React app to ${appPath}`);
+console.log(`Injected OG tags into ${appPath}`);
+console.log(`Copied OG image to ${outputImagePath}`);
 
 // Copy policy files from public/ into dist/
 const policyFiles = ['privacy-policy.html', 'terms-of-service.html'];
@@ -54,5 +60,14 @@ for (const file of policyFiles) {
   }
 }
 
-console.log(`Injected OG tags into ${indexPath}`);
-console.log(`Copied OG image to ${outputImagePath}`);
+// Copy landing page as the root index.html
+const landingPageSrc = path.join(publicDir, 'landing-index.html');
+const landingPageDest = indexPath;
+if (fs.existsSync(landingPageSrc)) {
+  fs.copyFileSync(landingPageSrc, landingPageDest);
+  console.log(`Copied landing page to ${landingPageDest} (root index.html)`);
+} else {
+  throw new Error(`Landing page not found at ${landingPageSrc}`);
+}
+
+console.log('Build complete: landing page at / and React app at /app.html');
