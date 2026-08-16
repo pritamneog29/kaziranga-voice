@@ -6,6 +6,8 @@ const distDir = path.join(rootDir, 'dist');
 const publicDir = path.join(rootDir, 'public');
 const indexPath = path.join(distDir, 'index.html');
 const appPath = path.join(distDir, 'app.html');
+const appDir = path.join(distDir, 'app');
+const appIndexPath = path.join(appDir, 'index.html');
 const sourceImagePath = path.join(rootDir, 'assets', 'og-kaziranga-voice.png');
 const outputImagePath = path.join(distDir, 'og-kaziranga-voice.png');
 const siteUrl = 'https://kazirangavoice.in';
@@ -43,9 +45,12 @@ if (blockRegex.test(html)) {
 
 // Save React app as app.html instead of index.html
 fs.writeFileSync(appPath, html, 'utf8');
+fs.mkdirSync(appDir, { recursive: true });
+fs.writeFileSync(appIndexPath, html, 'utf8');
 fs.copyFileSync(sourceImagePath, outputImagePath);
 
 console.log(`Saved React app to ${appPath}`);
+console.log(`Saved React app to ${appIndexPath}`);
 console.log(`Injected OG tags into ${appPath}`);
 console.log(`Copied OG image to ${outputImagePath}`);
 
@@ -70,4 +75,4 @@ if (fs.existsSync(landingPageSrc)) {
   throw new Error(`Landing page not found at ${landingPageSrc}`);
 }
 
-console.log('Build complete: landing page at / and React app at /app.html');
+console.log('Build complete: landing page at / and React app at /app plus /app.html');
