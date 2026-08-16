@@ -246,8 +246,7 @@ Kaziranga is deeply important to many people, and I hope it is protected with ca
 Thanking you,
 
 ${name}
-[Address]
-[Contact]`;
+`;
 
 const styles = StyleSheet.create({
   container: {

@@ -20,7 +20,7 @@ import {
   buildDefaultBody,
 } from '../config/emailTemplate';
 import {
-  hasUserSentOnlineMail,
+  getUserOnlineMailStatus,
   markUserOnlineMailSent,
   recordOnlineMail,
 } from '../config/firestore';
@@ -38,6 +38,16 @@ interface Props {
 }
 
 type SendState = 'idle' | 'sending' | 'sent' | 'failed';
+
+interface OnlineMailStatusPanel {
+  recipient: string;
+  dayKey: string;
+  senderName: string;
+  senderEmail: string;
+  sentAt: Date | null;
+}
+
+const onlineMailStatusCache = new Map<string, OnlineMailStatusPanel>();
 
 function getLocalDayKey(date = new Date()): string {
   const year = date.getFullYear();
@@ -62,12 +72,20 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const [bodyEdited, setBodyEdited] = useState(false);
   const [sending, setSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const currentDayKey = getLocalDayKey();
+  const normalizedPrimaryRecipient = primaryRecipient.trim().toLowerCase();
+  const currentStatusKey = `${user?.uid ?? 'no-user'}|${normalizedPrimaryRecipient}|${currentDayKey}`;
+  const cachedStatus = onlineMailStatusCache.get(currentStatusKey) ?? null;
   const [sendState, setSendState] = useState<SendState>('idle');
   const [sendStateText, setSendStateText] = useState('');
   const [checkingSendEligibility, setCheckingSendEligibility] = useState(false);
-  const [hasAlreadySent, setHasAlreadySent] = useState(false);
-  const isSendLockedForUser = hasAlreadySent;
-  const currentDayKey = getLocalDayKey();
+  const [hasAlreadySent, setHasAlreadySent] = useState(Boolean(cachedStatus));
+  const [loadedStatusKey, setLoadedStatusKey] = useState('');
+  const [statusPanel, setStatusPanel] = useState<OnlineMailStatusPanel | null>(
+    cachedStatus,
+  );
+  const isCurrentStatusLoaded = loadedStatusKey === currentStatusKey;
+  const isSendLockedForUser = isCurrentStatusLoaded && hasAlreadySent;
 
   useEffect(() => {
     setDraftSeed(`${Date.now()}-${Math.random()}`);
@@ -89,6 +107,8 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     const loadSendStatus = async () => {
       if (!user?.uid) {
         setHasAlreadySent(false);
+        setLoadedStatusKey('');
+        setStatusPanel(null);
         setSendState('idle');
         setSendStateText('');
         return;
@@ -96,7 +116,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
       setCheckingSendEligibility(true);
       try {
-        const sent = await hasUserSentOnlineMail(
+        const record = await getUserOnlineMailStatus(
           user.uid,
           primaryRecipient,
           currentDayKey,
@@ -105,19 +125,50 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
           return;
         }
 
+        const sent = Boolean(record?.sent);
         setHasAlreadySent(sent);
+        setLoadedStatusKey(currentStatusKey);
+        setStatusPanel(
+          record
+            ? {
+                recipient: record.recipient,
+                dayKey: record.dayKey,
+                senderName: record.senderName || senderName || user.name,
+                senderEmail: record.senderEmail || senderEmail || user.email,
+                sentAt: record.sentAt,
+              }
+            : null,
+        );
+        if (record) {
+          onlineMailStatusCache.set(currentStatusKey, {
+            recipient: record.recipient,
+            dayKey: record.dayKey,
+            senderName: record.senderName || senderName || user.name,
+            senderEmail: record.senderEmail || senderEmail || user.email,
+            sentAt: record.sentAt,
+          });
+        } else {
+          onlineMailStatusCache.delete(currentStatusKey);
+        }
         if (sent) {
           setSendState('sent');
-          setSendStateText('You already sent your email from this account.');
+          setSendStateText('You already sent to this recipient today.');
         } else {
           setSendState('idle');
           setSendStateText('');
         }
       } catch (e: any) {
         if (active) {
-          setSendState('failed');
-          setSendStateText(
-            `Failed to verify send status: ${e?.message ?? 'Unknown error'}`,
+          const fallback = onlineMailStatusCache.get(currentStatusKey) ?? null;
+          const sent = Boolean(fallback);
+          setHasAlreadySent(sent);
+          setLoadedStatusKey(currentStatusKey);
+          setStatusPanel(fallback);
+          setSendState(sent ? 'sent' : 'idle');
+          setSendStateText(sent ? 'You already sent to this recipient today.' : '');
+          console.warn(
+            'Failed to verify send status; using cached status if available:',
+            e?.message ?? 'Unknown error',
           );
         }
       } finally {
@@ -131,7 +182,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     return () => {
       active = false;
     };
-  }, [currentDayKey, primaryRecipient, user?.uid]);
+  }, [currentDayKey, currentStatusKey, primaryRecipient, user?.uid]);
 
   if (!user) {
     return null;
@@ -140,7 +191,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const getBody = () =>
     bodyEdited
       ? body
-      : buildDefaultBody(personalExperience, senderName, senderEmail, draftSeed);
+      : buildDefaultBody(personalExperience, senderName, draftSeed);
 
   const parseRecipients = (value: string): string[] =>
     value
@@ -245,11 +296,30 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
        console.error('Record mail failed:', e);
       }
       try {
-       await markUserOnlineMailSent(user.uid, primaryRecipient, currentDayKey);
+       await markUserOnlineMailSent(
+         user.uid,
+         primaryRecipient,
+         {
+           uid: user.uid,
+           name: senderName.trim() || user.name,
+           email: senderEmail.trim() || user.email,
+         },
+         currentDayKey,
+       );
       } catch (e: any) {
        console.warn('Mark send failed (non-critical):', e?.message);
       }
       setHasAlreadySent(true);
+      setLoadedStatusKey(currentStatusKey);
+      const nextStatusPanel = {
+        recipient: normalizedPrimaryRecipient,
+        dayKey: currentDayKey,
+        senderName: senderName.trim() || user.name,
+        senderEmail: senderEmail.trim() || user.email,
+        sentAt: new Date(),
+      };
+      setStatusPanel(nextStatusPanel);
+      onlineMailStatusCache.set(currentStatusKey, nextStatusPanel);
       setSendState('sent');
       setSendStateText('Sent successfully via Gmail API and counted.');
       Alert.alert(
@@ -419,20 +489,51 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
             {!bodyEdited && (
               <Text style={styles.editHint}>
-                ✏️ Tap the body above to personalise it. Your personal experience
-                section above is automatically included, and the letter already
-                includes stronger language on indigenous land rights.
+                ✏️ Please personalize the email before sending. A short personal
+                note can help it feel more genuine and less likely to be treated
+                as bulk mail.
               </Text>
             )}
+
+            <Text style={styles.sendTip}>
+              Tip: even one small personal edit helps the message feel authentic.
+            </Text>
 
             <ActionButton
               label={isSendLockedForUser ? 'Email Already Sent' : 'Send Email'}
               onPress={handleSend}
               loading={sending}
-              disabled={sending || checkingSendEligibility || isSendLockedForUser}
+              disabled={
+                sending ||
+                checkingSendEligibility ||
+                !isCurrentStatusLoaded ||
+                isSendLockedForUser
+              }
               variant="primary"
               icon="📨"
             />
+
+            {statusPanel && isCurrentStatusLoaded && (
+              <View style={styles.senderBlockCard}>
+                <Text style={styles.senderBlockTitle}>Sent by you today</Text>
+                <Text style={styles.senderBlockText}>
+                  Sender: {statusPanel.senderName || 'Unknown'}
+                </Text>
+                <Text style={styles.senderBlockText}>
+                  Email: {statusPanel.senderEmail || 'Unknown'}
+                </Text>
+                <Text style={styles.senderBlockText}>
+                  Recipient: {statusPanel.recipient}
+                </Text>
+                <Text style={styles.senderBlockText}>
+                  Day: {statusPanel.dayKey}
+                </Text>
+                <Text style={styles.senderBlockText}>
+                  Sent at:{' '}
+                  {statusPanel.sentAt ? statusPanel.sentAt.toLocaleString() : 'Now'}
+                </Text>
+              </View>
+            )}
 
             {sendState !== 'idle' && (
               <View
@@ -451,7 +552,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
             <Text style={styles.disclaimer}>
               Signed-in users send through Gmail API with delivery confirmation and
-              the action is counted immediately after success.
+              each successful send is counted in the live tracker.
             </Text>
           </View>
 
@@ -715,6 +816,32 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginBottom: 14,
     fontStyle: 'italic',
+  },
+  sendTip: {
+    fontSize: 12,
+    color: '#355E3B',
+    marginTop: -6,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  senderBlockCard: {
+    marginTop: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#D7E5D6',
+    backgroundColor: '#F6FBF5',
+    padding: 12,
+  },
+  senderBlockTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  senderBlockText: {
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    lineHeight: 18,
   },
   statusBox: {
     borderRadius: 14,

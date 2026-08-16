@@ -120,7 +120,7 @@ export default function LoginScreen({ onSignIn }: Props) {
               species.
             </Text>
             <Text style={styles.storyText}>
-              This app makes it easy to <Text style={styles.bold}>raise your voice</Text> — send a pre-drafted email to the Director of Kaziranga National Park. Every send is counted and shown in the live tracker.
+              This app makes it easy to <Text style={styles.bold}>raise your voice</Text> — send a pre-drafted email to the Director of Kaziranga National Park. This website tracks every successful email sent in the live tracker below.
             </Text>
           </View>
 

@@ -70,7 +70,7 @@ export default function ImpactCounter() {
 
       <View style={styles.metaRow}>
         <Text style={styles.metaText}>
-          Each send helps keep attention on Kaziranga and the ESZ issue.
+          This website tracks every successful email sent to Kaziranga authorities.
         </Text>
         <Text style={styles.metaText}>
           {stats.last_updated ? `Last sent ${stats.last_updated.toLocaleString()}` : 'No sends yet'}

@@ -1,6 +1,6 @@
 // The director email address and default message body.
 
-export const DIRECTOR_EMAIL = 'pritamneog29@gmail.com';
+export const DIRECTOR_EMAIL = 'dir.kaziranganp@gmail.com';
 
 export const DEFAULT_SUBJECT =
   'Concern regarding Kaziranga ESZ and nearby development';
@@ -15,12 +15,6 @@ const INTRO_VARIANTS = [
   'I am writing to share a concern about the proposed reduction of the Eco-Sensitive Zone around Kaziranga National Park and the possibility of new construction near the park boundary.',
   'I am reaching out to ask for your attention to proposals that may reduce the Eco-Sensitive Zone around Kaziranga National Park and increase construction pressure near the park.',
   'I am writing as a concerned citizen about the proposed changes around Kaziranga National Park, especially anything that could weaken the Eco-Sensitive Zone or encourage more construction near the park.',
-];
-
-const CLOSING_VARIANTS = [
-  'Thank you for your time and consideration.',
-  'I appreciate your attention to this matter.',
-  'Thank you for taking this concern seriously.',
 ];
 
 const REQUEST_LEAD_VARIANTS = [
@@ -48,15 +42,13 @@ export const buildDefaultSubject = (seed = 'kaziranga-default'): string =>
 export const buildDefaultBody = (
   personalExperience: string,
   senderName: string,
-  senderEmail: string,
   seed = 'kaziranga-default',
 ): string => {
   const subjectLine = buildDefaultSubject(seed);
   const intro = pickVariant(INTRO_VARIANTS, seed);
   const requestLead = pickVariant(REQUEST_LEAD_VARIANTS, seed);
-  const closing = pickVariant(CLOSING_VARIANTS, seed);
   const personalSection = personalExperience.trim()
-    ? `My personal connection to Kaziranga:
+   ? `My personal connection to Kaziranga:
 
 ${personalExperience.trim()}
 
@@ -92,9 +84,5 @@ Kaziranga is deeply important to many people, and I hope it is protected with ca
 Thanking you,
 
 ${senderName || '[Your Name]'}
-${senderEmail || '[Your Contact Information]'}
-
----
-${closing}
 `.trimStart();
 };

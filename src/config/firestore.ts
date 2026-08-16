@@ -43,6 +43,16 @@ export interface OfflineLetterRecord {
   status: 'submitted'; // can extend to 'draft' or 'sent' later
 }
 
+export interface OnlineMailStatusRecord {
+  sent: boolean;
+  sentAt: Date | null;
+  recipient: string;
+  dayKey: string;
+  senderUid: string;
+  senderName: string;
+  senderEmail: string;
+}
+
 function getRandomShardId(): string {
   return String(Math.floor(Math.random() * COUNTER_SHARD_COUNT)).padStart(2, '0');
 }
@@ -86,6 +96,7 @@ export async function recordOnlineMail(): Promise<void> {
 export async function markUserOnlineMailSent(
   userId: string,
   recipient: string,
+  sender: { uid: string; name: string; email: string },
   dayKey = getLocalDayKey(),
 ): Promise<void> {
   const statusRef = doc(
@@ -100,6 +111,9 @@ export async function markUserOnlineMailSent(
       sentAt: serverTimestamp(),
       recipient: recipient.trim().toLowerCase(),
       dayKey,
+      senderUid: sender.uid,
+      senderName: sender.name,
+      senderEmail: sender.email.trim().toLowerCase(),
     },
     { merge: true },
   );
@@ -126,6 +140,41 @@ export async function hasUserSentOnlineMail(
     // If rules are not yet updated for this collection, keep send unlocked.
     if (error?.code === 'permission-denied') {
       return false;
+    }
+    throw error;
+  }
+}
+
+/** Read the sender block for a user/recipient/day send record. */
+export async function getUserOnlineMailStatus(
+  userId: string,
+  recipient: string,
+  dayKey = getLocalDayKey(),
+): Promise<OnlineMailStatusRecord | null> {
+  try {
+    const statusRef = doc(
+      db,
+      USER_ONLINE_MAIL_STATUS_COLLECTION,
+      getOnlineMailStatusDocId(userId, recipient, dayKey),
+    );
+    const snap = await getDoc(statusRef);
+    if (!snap.exists()) {
+      return null;
+    }
+
+    const data = snap.data();
+    return {
+      sent: Boolean(data.sent),
+      sentAt: data.sentAt?.toDate?.() ?? null,
+      recipient: String(data.recipient ?? recipient).toLowerCase(),
+      dayKey: String(data.dayKey ?? dayKey),
+      senderUid: String(data.senderUid ?? userId),
+      senderName: String(data.senderName ?? ''),
+      senderEmail: String(data.senderEmail ?? ''),
+    };
+  } catch (error: any) {
+    if (error?.code === 'permission-denied') {
+      return null;
     }
     throw error;
   }
