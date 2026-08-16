@@ -225,25 +225,23 @@ The Director,
 Kaziranga National Park & Tiger Reserve,
 Bokakhat, Golaghat, Assam – 785612
 
-Subject: Urgent Concern Regarding Reduction of Eco-Sensitive Zone & Hotel Construction
+Subject: Concern regarding Kaziranga ESZ and nearby development
 
 Respected Sir/Madam,
 
-I am writing as a deeply concerned citizen to urge your office to take immediate action to protect Kaziranga National Park — a UNESCO World Heritage Site and home to the world's largest population of Indian one-horned rhinoceros.
+I am writing to share a concern about the Eco-Sensitive Zone around Kaziranga National Park and the possibility of new construction near the park boundary.
 
-I am gravely concerned about:
+Kaziranga is a UNESCO World Heritage Site and an important habitat for rhinos, elephants, tigers, and many bird species. The Eco-Sensitive Zone helps protect the landscape and the wildlife movement corridors that matter during flood season.
 
-1. The proposed reduction of the Eco-Sensitive Zone (ESZ) surrounding the park, which serves as a critical buffer and migration corridor for wildlife, especially during Brahmaputra floods.
-
-2. Reports of luxury hotel construction (including a proposed Hyatt property) on indigenous lands near the park, which threatens both the ecological integrity of the ESZ and the land rights of indigenous communities.
+I am also concerned that nearby development could affect indigenous communities who have long lived with and cared for these lands.
 
 I respectfully request that your office:
-- Formally oppose any reduction in the ESZ boundaries.
-- Ensure transparent Environmental Impact Assessments for all construction proposals.
-- Protect the land rights of indigenous communities under the Forest Rights Act, 2006.
-- Strengthen wildlife corridors to the Karbi Anglong hills.
+- Keep the ESZ protections around Kaziranga intact.
+- Ensure any proposed project near the park is reviewed carefully and transparently.
+- Protect the land, livelihood, and participation rights of indigenous communities.
+- Preserve wildlife corridors toward the Karbi Anglong hills.
 
-Kaziranga is irreplaceable. I urge you to protect it.
+Kaziranga is deeply important to many people, and I hope it is protected with care.
 
 Thanking you,
 

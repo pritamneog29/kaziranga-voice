@@ -14,7 +14,11 @@ import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
 import ImpactCounter from '../components/ImpactCounter';
-import { DIRECTOR_EMAIL, DEFAULT_SUBJECT, buildDefaultBody } from '../config/emailTemplate';
+import {
+  DIRECTOR_EMAIL,
+  DEFAULT_SUBJECT,
+  buildDefaultBody,
+} from '../config/emailTemplate';
 import {
   hasUserSentOnlineMail,
   markUserOnlineMailSent,
@@ -35,9 +39,19 @@ interface Props {
 
 type SendState = 'idle' | 'sending' | 'sent' | 'failed';
 
+function getLocalDayKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
+  const [draftSeed, setDraftSeed] = useState(
+    () => `${Date.now()}-${Math.random()}`,
+  );
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [senderName, setSenderName] = useState(user?.name ?? '');
   const [senderEmail, setSenderEmail] = useState(user?.email ?? '');
@@ -53,6 +67,11 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const [checkingSendEligibility, setCheckingSendEligibility] = useState(false);
   const [hasAlreadySent, setHasAlreadySent] = useState(false);
   const isSendLockedForUser = hasAlreadySent;
+  const currentDayKey = getLocalDayKey();
+
+  useEffect(() => {
+    setDraftSeed(`${Date.now()}-${Math.random()}`);
+  }, [primaryRecipient]);
 
   useEffect(() => {
     if (!user) {
@@ -77,7 +96,11 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
       setCheckingSendEligibility(true);
       try {
-        const sent = await hasUserSentOnlineMail(user.uid);
+        const sent = await hasUserSentOnlineMail(
+          user.uid,
+          primaryRecipient,
+          currentDayKey,
+        );
         if (!active) {
           return;
         }
@@ -108,7 +131,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     return () => {
       active = false;
     };
-  }, [user?.uid]);
+  }, [currentDayKey, primaryRecipient, user?.uid]);
 
   if (!user) {
     return null;
@@ -117,7 +140,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const getBody = () =>
     bodyEdited
       ? body
-      : buildDefaultBody(personalExperience, senderName, senderEmail);
+      : buildDefaultBody(personalExperience, senderName, senderEmail, draftSeed);
 
   const parseRecipients = (value: string): string[] =>
     value
@@ -222,7 +245,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
        console.error('Record mail failed:', e);
       }
       try {
-       await markUserOnlineMailSent(user.uid);
+       await markUserOnlineMailSent(user.uid, primaryRecipient, currentDayKey);
       } catch (e: any) {
        console.warn('Mark send failed (non-critical):', e?.message);
       }

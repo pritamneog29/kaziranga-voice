@@ -47,6 +47,21 @@ function getRandomShardId(): string {
   return String(Math.floor(Math.random() * COUNTER_SHARD_COUNT)).padStart(2, '0');
 }
 
+function getLocalDayKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeRecipientForLock(recipient: string): string {
+  return recipient.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_') || 'unknown_recipient';
+}
+
+function getOnlineMailStatusDocId(userId: string, recipient: string, dayKey: string): string {
+  return `${userId}__${dayKey}__${normalizeRecipientForLock(recipient)}`;
+}
+
 async function incrementCounterShard(
   counterType: 'online_count' | 'offline_count',
 ): Promise<void> {
@@ -67,23 +82,41 @@ export async function recordOnlineMail(): Promise<void> {
   await incrementCounterShard('online_count');
 }
 
-/** Mark that a user has already sent an online mail. */
-export async function markUserOnlineMailSent(userId: string): Promise<void> {
-  const statusRef = doc(db, USER_ONLINE_MAIL_STATUS_COLLECTION, userId);
+/** Mark that a user has already sent to a recipient on a specific day. */
+export async function markUserOnlineMailSent(
+  userId: string,
+  recipient: string,
+  dayKey = getLocalDayKey(),
+): Promise<void> {
+  const statusRef = doc(
+    db,
+    USER_ONLINE_MAIL_STATUS_COLLECTION,
+    getOnlineMailStatusDocId(userId, recipient, dayKey),
+  );
   await setDoc(
     statusRef,
     {
       sent: true,
       sentAt: serverTimestamp(),
+      recipient: recipient.trim().toLowerCase(),
+      dayKey,
     },
     { merge: true },
   );
 }
 
-/** Check whether a user has already sent an online mail. */
-export async function hasUserSentOnlineMail(userId: string): Promise<boolean> {
+/** Check whether a user has already sent to a recipient on a specific day. */
+export async function hasUserSentOnlineMail(
+  userId: string,
+  recipient: string,
+  dayKey = getLocalDayKey(),
+): Promise<boolean> {
   try {
-    const statusRef = doc(db, USER_ONLINE_MAIL_STATUS_COLLECTION, userId);
+    const statusRef = doc(
+      db,
+      USER_ONLINE_MAIL_STATUS_COLLECTION,
+      getOnlineMailStatusDocId(userId, recipient, dayKey),
+    );
     const snap = await getDoc(statusRef);
     if (!snap.exists()) {
       return false;
