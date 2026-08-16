@@ -1,6 +1,6 @@
 // The director email address and default message body.
 
-export const DIRECTOR_EMAIL = 'pritamneog29@gmail.com';
+export const DIRECTOR_EMAIL = 'dir.kaziranganp@gmail.com';
 
 export const DEFAULT_SUBJECT =
   'Urgent Concern: Reduction of Eco-Sensitive Zone & Hotel Construction at Kaziranga National Park';
