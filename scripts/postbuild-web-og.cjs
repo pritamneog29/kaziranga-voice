@@ -3,6 +3,7 @@ const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
+const publicDir = path.join(rootDir, 'public');
 const indexPath = path.join(distDir, 'index.html');
 const sourceImagePath = path.join(rootDir, 'assets', 'og-kaziranga-voice.png');
 const outputImagePath = path.join(distDir, 'og-kaziranga-voice.png');
@@ -20,13 +21,13 @@ let html = fs.readFileSync(indexPath, 'utf8');
 
 const ogBlock = `  <!-- og-tags:start -->
   <meta property="og:title" content="Kaziranga Voice" />
-  <meta property="og:description" content="Send your voice to protect Kaziranga’s eco-sensitive zone and wildlife corridors." />
+  <meta property="og:description" content="Send your voice to protect Kaziranga's eco-sensitive zone and wildlife corridors." />
   <meta property="og:image" content="${siteUrl}/og-kaziranga-voice.png" />
   <meta property="og:url" content="${siteUrl}" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Kaziranga Voice" />
-  <meta name="twitter:description" content="Send your voice to protect Kaziranga’s eco-sensitive zone and wildlife corridors." />
+  <meta name="twitter:description" content="Send your voice to protect Kaziranga's eco-sensitive zone and wildlife corridors." />
   <meta name="twitter:image" content="${siteUrl}/og-kaziranga-voice.png" />
   <!-- og-tags:end -->`;
 
@@ -41,6 +42,17 @@ if (blockRegex.test(html)) {
 
 fs.writeFileSync(indexPath, html, 'utf8');
 fs.copyFileSync(sourceImagePath, outputImagePath);
+
+// Copy policy files from public/ into dist/
+const policyFiles = ['privacy-policy.html', 'terms-of-service.html'];
+for (const file of policyFiles) {
+  const srcPath = path.join(publicDir, file);
+  const destPath = path.join(distDir, file);
+  if (fs.existsSync(srcPath)) {
+    fs.copyFileSync(srcPath, destPath);
+    console.log(`Copied ${file} to ${destPath}`);
+  }
+}
 
 console.log(`Injected OG tags into ${indexPath}`);
 console.log(`Copied OG image to ${outputImagePath}`);

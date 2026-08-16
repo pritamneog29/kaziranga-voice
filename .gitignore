@@ -6,8 +6,6 @@ node_modules/
 # Expo
 .expo/
 dist/
-!dist/privacy-policy.html
-!dist/terms-of-service.html
 web-build/
 expo-env.d.ts
 
