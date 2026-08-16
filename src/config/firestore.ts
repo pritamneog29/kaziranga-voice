@@ -1,6 +1,7 @@
 // Firestore helpers for tracking mail counts and legacy offline letter records.
 // Collections:
-//   "stats" / "mail_counter" → counter tracking
+//   "stats" / "mail_counter" → legacy/base counter seed
+//   "stats" / "mail_counter" / "shards" → high-scale distributed counter writes
 //   "offline_letters" → individual letter submissions with photos
 
 import { db, storage } from '../config/firebase';
@@ -8,7 +9,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  updateDoc,
   increment,
   serverTimestamp,
   onSnapshot,
@@ -23,6 +23,8 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const COUNTER_REF = doc(db, 'stats', 'mail_counter');
+const COUNTER_SHARDS_REF = collection(db, 'stats', 'mail_counter', 'shards');
+const COUNTER_SHARD_COUNT = 32;
 const USER_ONLINE_MAIL_STATUS_COLLECTION = 'user_online_mail_status';
 
 export interface MailStats {
@@ -41,25 +43,28 @@ export interface OfflineLetterRecord {
   status: 'submitted'; // can extend to 'draft' or 'sent' later
 }
 
-/** Ensure the counter document exists with zeroed fields. */
-async function ensureCounter(): Promise<void> {
-  const snap = await getDoc(COUNTER_REF);
-  if (!snap.exists()) {
-    await setDoc(COUNTER_REF, {
-      total: 0,
+function getRandomShardId(): string {
+  return String(Math.floor(Math.random() * COUNTER_SHARD_COUNT)).padStart(2, '0');
+}
+
+async function incrementCounterShard(
+  counterType: 'online_count' | 'offline_count',
+): Promise<void> {
+  const shardRef = doc(COUNTER_SHARDS_REF, getRandomShardId());
+  await setDoc(
+    shardRef,
+    {
+      total: increment(1),
+      [counterType]: increment(1),
       last_updated: serverTimestamp(),
-    });
-  }
+    },
+    { merge: true },
+  );
 }
 
 /** Increment the online email counter. */
 export async function recordOnlineMail(): Promise<void> {
-  await ensureCounter();
-  await updateDoc(COUNTER_REF, {
-    total: increment(1),
-    online_count: increment(1),
-    last_updated: serverTimestamp(),
-  });
+  await incrementCounterShard('online_count');
 }
 
 /** Mark that a user has already sent an online mail. */
@@ -122,36 +127,66 @@ export async function recordOfflineLetter(
     });
 
     // 3. Increment counter
-    await ensureCounter();
-    await updateDoc(
-      doc(db, 'stats', 'mail_counter'),
-      {
-        total: increment(1),
-        offline_count: increment(1),
-        last_updated: serverTimestamp(),
-      },
-    );
+    await incrementCounterShard('offline_count');
   } catch (error) {
     console.error('Error recording offline letter:', error);
     throw error;
   }
 }
 
+function readDocStats(data: Record<string, any> | undefined): MailStats {
+  return {
+    total: Number(data?.total ?? 0),
+    last_updated: data?.last_updated?.toDate?.() ?? null,
+  };
+}
+
+function latestDate(a: Date | null, b: Date | null): Date | null {
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
+}
+
 /** Subscribe to live counter updates; returns an unsubscribe function. */
 export function subscribeToStats(
   callback: (stats: MailStats) => void,
 ): Unsubscribe {
-  return onSnapshot(COUNTER_REF, (snap) => {
-    if (snap.exists()) {
-      const d = snap.data();
-      callback({
-        total: d.total ?? 0,
-        last_updated: d.last_updated?.toDate?.() ?? null,
-      });
-    } else {
-      callback({ total: 0, last_updated: null });
-    }
+  let legacyStats: MailStats = { total: 0, last_updated: null };
+  let shardStats: MailStats = { total: 0, last_updated: null };
+
+  const emitCombined = () => {
+    callback({
+      total: legacyStats.total + shardStats.total,
+      last_updated: latestDate(legacyStats.last_updated, shardStats.last_updated),
+    });
+  };
+
+  const unsubscribeLegacy = onSnapshot(COUNTER_REF, (snap) => {
+    legacyStats = snap.exists()
+      ? readDocStats(snap.data() as Record<string, any>)
+      : { total: 0, last_updated: null };
+    emitCombined();
   });
+
+  const unsubscribeShards = onSnapshot(COUNTER_SHARDS_REF, (snap) => {
+    let total = 0;
+    let mostRecent: Date | null = null;
+
+    snap.forEach((shardDoc) => {
+      const shardData = shardDoc.data();
+      total += Number(shardData.total ?? 0);
+      const shardDate = shardData.last_updated?.toDate?.() ?? null;
+      mostRecent = latestDate(mostRecent, shardDate);
+    });
+
+    shardStats = { total, last_updated: mostRecent };
+    emitCombined();
+  });
+
+  return () => {
+    unsubscribeLegacy();
+    unsubscribeShards();
+  };
 }
 
 /** Fetch all offline letters for a specific user. */

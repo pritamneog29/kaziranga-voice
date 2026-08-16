@@ -85,12 +85,20 @@ Scan the QR code with **Expo Go** on your Android or iOS device.
 
 ```
 stats/
-  mail_counter/
-    total          (number)  — emails sent via the app
+  mail_counter/                      (legacy/base counter seed)
+    total          (number)
     last_updated   (timestamp)
+  mail_counter/shards/
+    00..31/
+      total          (number)  — sharded increments
+      online_count   (number)
+      offline_count  (number)
+      last_updated   (timestamp)
 ```
 
 Counter visibility is intended to be public. Use Firestore rules accordingly if you want unauthenticated users to read and write this counter.
+
+The app now uses a distributed (sharded) counter for writes, which scales far better under high concurrent traffic than a single document counter.
 
 ---
 
