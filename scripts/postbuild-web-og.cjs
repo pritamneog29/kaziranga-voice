@@ -23,13 +23,14 @@ if (!fs.existsSync(sourceImagePath)) {
 let html = fs.readFileSync(indexPath, 'utf8');
 
 const ogBlock = `  <!-- og-tags:start -->
-  <meta property="og:title" content="Kaziranga Voice" />
+  <title>Kaziranga Voice (kazirangavoice.in)</title>
+  <meta property="og:title" content="Kaziranga Voice (kazirangavoice.in)" />
   <meta property="og:description" content="Send your voice to protect Kaziranga's eco-sensitive zone and wildlife corridors." />
   <meta property="og:image" content="${siteUrl}/og-kaziranga-voice.png" />
   <meta property="og:url" content="${siteUrl}" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Kaziranga Voice" />
+  <meta name="twitter:title" content="Kaziranga Voice (kazirangavoice.in)" />
   <meta name="twitter:description" content="Send your voice to protect Kaziranga's eco-sensitive zone and wildlife corridors." />
   <meta name="twitter:image" content="${siteUrl}/og-kaziranga-voice.png" />
   <!-- og-tags:end -->`;

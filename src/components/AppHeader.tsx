@@ -19,7 +19,10 @@ export default function AppHeader({ size = 'large', onPressHome }: Props) {
           Kaziranga Voice
         </Text>
         {isLarge && (
-          <Text style={styles.subtitle}>Speak up for the Wild</Text>
+          <>
+            <Text style={styles.subtitle}>(kazirangavoice.in)</Text>
+            <Text style={styles.subtitle}>Speak up for the Wild</Text>
+          </>
         )}
       </View>
     </View>
