@@ -24,3 +24,7 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');
+googleProvider.setCustomParameters({ prompt: 'select_account' });

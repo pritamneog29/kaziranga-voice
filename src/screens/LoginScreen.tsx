@@ -11,8 +11,12 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
-import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import {
+  signInWithCredential,
+  signInWithPopup,
+  GoogleAuthProvider,
+} from 'firebase/auth';
+import { auth, googleProvider } from '../config/firebase';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
@@ -41,54 +45,108 @@ export default function LoginScreen({ onSignIn }: Props) {
   const { width, height } = useWindowDimensions();
   const isWide = width >= 900;
   const magazineMinHeight = Math.max(620, Math.round(height * 0.72));
-  const webRedirectUri =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}${window.location.pathname}`
-      : 'https://kazirangavoice.in/app';
 
   const [, response, promptAsync] = Google.useAuthRequest({
     clientId: EXPO_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     scopes: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send'],
-    redirectUri:
-      Platform.OS === 'web'
-        ? webRedirectUri
-        : AuthSession.makeRedirectUri({
-            scheme: undefined,
-          }),
+    redirectUri: AuthSession.makeRedirectUri({
+      scheme: undefined,
+    }),
   });
 
   React.useEffect(() => {
-    if (response?.type === 'success') {
+    if (Platform.OS !== 'web' && response?.type === 'success') {
       const { authentication } = response;
       fetchGoogleUser(authentication?.accessToken ?? '');
-    } else if (response?.type === 'error') {
+    } else if (Platform.OS !== 'web' && response?.type === 'error') {
       setLoading(false);
       Alert.alert('Sign-in failed', response.error?.message ?? 'Please try again.');
     }
   }, [response]);
 
+  const completeSignIn = ({
+    accessToken,
+    name,
+    email,
+    photoUrl,
+    uid,
+  }: {
+    accessToken: string;
+    name?: string | null;
+    email?: string | null;
+    photoUrl?: string | null;
+    uid: string;
+  }) => {
+    onSignIn({
+      uid,
+      name: name?.trim() || 'Google User',
+      email: email?.trim() || '',
+      photoUrl: photoUrl ?? undefined,
+      googleAccessToken: accessToken,
+    });
+  };
+
   const fetchGoogleUser = async (token: string) => {
+    if (!token) {
+      setLoading(false);
+      Alert.alert('Sign-in failed', 'Google did not return an access token.');
+      return;
+    }
+
     try {
       const res = await fetch('https://www.googleapis.com/userinfo/v2/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) {
+        throw new Error(`Google user info request failed (${res.status}).`);
+      }
       const data = await res.json();
 
       // Sign in with Firebase using the Google credential
       const credential = GoogleAuthProvider.credential(null, token);
       const userCredential = await signInWithCredential(auth, credential);
 
-      onSignIn({
+      completeSignIn({
         uid: userCredential.user.uid,
-        name: data.name,
-        email: data.email,
-        photoUrl: data.picture,
-        googleAccessToken: token,
+        name: data.name ?? userCredential.user.displayName,
+        email: data.email ?? userCredential.user.email,
+        photoUrl: data.picture ?? userCredential.user.photoURL,
+        accessToken: token,
       });
-    } catch {
-      Alert.alert('Error', 'Could not retrieve user info. Please try again.');
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not retrieve user info. Please try again.';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWebSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const accessToken = credential?.accessToken;
+
+      if (!accessToken) {
+        throw new Error('Google did not return Gmail access for this sign-in.');
+      }
+
+      completeSignIn({
+        uid: result.user.uid,
+        name: result.user.displayName,
+        email: result.user.email,
+        photoUrl: result.user.photoURL,
+        accessToken,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Please try signing in again.';
+      Alert.alert('Sign-in failed', message);
     } finally {
       setLoading(false);
     }
@@ -96,6 +154,11 @@ export default function LoginScreen({ onSignIn }: Props) {
 
   const handleSignIn = async () => {
     setLoading(true);
+    if (Platform.OS === 'web') {
+      await handleWebSignIn();
+      return;
+    }
+
     await promptAsync();
   };
 
