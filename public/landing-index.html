@@ -278,16 +278,8 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
         import { getFirestore, doc, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBEzPqTb1x7QYkYl3GQx9wQVXn0fJvmPwI",
-            authDomain: "kaziranga-voice.firebaseapp.com",
-            projectId: "kaziranga-voice",
-            storageBucket: "kaziranga-voice.appspot.com",
-            messagingSenderId: "826688821803",
-            appId: "1:826688821803:web:07dc0b91e6b40b4d45e3c4",
-            measurementId: "G-QTVDVX8L5C"
-        };
+        // Firebase configuration (injected at build time)
+        const firebaseConfig = __FIREBASE_CONFIG__;
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);

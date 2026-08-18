@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Load environment variables
+require('dotenv').config();
+
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const publicDir = path.join(rootDir, 'public');
@@ -66,11 +69,27 @@ for (const file of policyFiles) {
   }
 }
 
-// Copy landing page as the root index.html
+// Copy and inject Firebase config into landing page
 const landingPageSrc = path.join(publicDir, 'landing-index.html');
 const landingPageDest = indexPath;
 if (fs.existsSync(landingPageSrc)) {
-  fs.copyFileSync(landingPageSrc, landingPageDest);
+  let landingHtml = fs.readFileSync(landingPageSrc, 'utf8');
+  
+  // Inject Firebase config from environment variables
+  const firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+  };
+  
+  const configStr = JSON.stringify(firebaseConfig);
+  landingHtml = landingHtml.replace('__FIREBASE_CONFIG__', configStr);
+  
+  fs.writeFileSync(landingPageDest, landingHtml, 'utf8');
   console.log(`Copied landing page to ${landingPageDest} (root index.html)`);
 } else {
   throw new Error(`Landing page not found at ${landingPageSrc}`);
