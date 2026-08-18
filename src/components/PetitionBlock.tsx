@@ -12,6 +12,18 @@ export default function PetitionBlock() {
 
   return (
     <View style={styles.card}>
+      <View style={styles.noticeCard}>
+        <Text style={styles.noticeTitle}>🔐 Big tech already knows plenty about us 😅</Text>
+        <Text style={styles.noticeText}>
+          Here, we only use Google sign-in to send your email and keep count for
+          Kaziranga — we don’t save your data or use it for ads.
+        </Text>
+        <Text style={styles.noticeText}>
+          We’re also working on ways to count emails without login in the future ✨
+          Too shy to sign in? No problem — you can still sign the petition 📝
+        </Text>
+      </View>
+
       <Text style={styles.title}>📣 Support the petition</Text>
       <Text style={styles.text}>
         Add your name to the Change.org petition to protect Kaziranga's wildlife,
@@ -43,6 +55,24 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
     gap: 12,
+  },
+  noticeCard: {
+    backgroundColor: '#EDF4FF',
+    borderRadius: 14,
+    padding: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2B7FFF',
+    gap: 8,
+  },
+  noticeTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+  },
+  noticeText: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    lineHeight: 21,
   },
   title: {
     fontSize: 18,

@@ -35,6 +35,22 @@
             font-size: 1.2em;
             margin-bottom: 20px;
         }
+        .privacy-callout {
+            max-width: 900px;
+            margin: 0 auto 24px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #1b5e20;
+            padding: 18px 22px;
+            border-radius: 14px;
+            border-left: 5px solid #f57c00;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        .privacy-callout strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1.02em;
+        }
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -91,6 +107,19 @@
         }
         .petition-card p {
             margin-bottom: 12px;
+        }
+        .petition-button {
+            display: inline-block;
+            background: #f57c00;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: background 0.3s;
+        }
+        .petition-button:hover {
+            background: #ef6c00;
         }
         footer {
             background: #f9f9f9;
@@ -194,6 +223,10 @@
         <h1>Kaziranga Voice (kazirangavoice.in)</h1>
         <p>Send your voice to protect Kaziranga National Park</p>
         <p style="font-size: 1em; margin-top: 15px; opacity: 0.95;">A web application that makes it easy to send advocacy emails to the Director of Kaziranga National Park to protect its Eco Sensitive Zone, wildlife corridors, and indigenous lands.</p>
+        <div class="privacy-callout">
+            <strong>🔐 Big tech already knows plenty about us 😅</strong>
+            <div>Here, we only use Google sign-in to send your email and keep count for Kaziranga — we don’t save your data or use it for ads. We’re also working on ways to count emails without login in the future ✨ Too shy to sign in? You can still sign the petition 📝</div>
+        </div>
     </header>
 
     <div class="container">
@@ -216,6 +249,7 @@
                     href="https://www.change.org/p/save-kaziranga-protect-wildlife-land-and-people"
                     target="_blank"
                     rel="noopener noreferrer"
+                    class="petition-button"
                 >
                     Sign the petition
                 </a>
