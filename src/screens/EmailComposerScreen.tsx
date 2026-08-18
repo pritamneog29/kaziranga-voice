@@ -92,6 +92,54 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const isCurrentStatusLoaded = loadedStatusKey === currentStatusKey;
   const isSendLockedForUser = isCurrentStatusLoaded && hasAlreadySent;
 
+  const clearCachedStatusForUser = (uid: string) => {
+    const userPrefix = `${uid}|`;
+    for (const cacheKey of onlineMailStatusCache.keys()) {
+      if (cacheKey.startsWith(userPrefix)) {
+        onlineMailStatusCache.delete(cacheKey);
+      }
+    }
+  };
+
+  const handleDeleteMyData = () => {
+    if (!user?.uid) {
+      return;
+    }
+    Alert.alert(
+      'Delete my send-status data?',
+      'This will remove your stored online send-status records from the database. Counter totals will not change.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingData(true);
+            try {
+              const deletedCount = await deleteAllUserOnlineMailStatus(user.uid);
+              clearCachedStatusForUser(user.uid);
+              setHasAlreadySent(false);
+              setStatusPanel(null);
+              setLoadedStatusKey(currentStatusKey);
+              setSendState('idle');
+              setSendStateText('');
+              Alert.alert(
+                'Data deleted',
+                deletedCount > 0
+                  ? `Removed ${deletedCount} record(s).`
+                  : 'No stored send-status records were found for your account.',
+              );
+            } catch (error: any) {
+              Alert.alert('Delete failed', error?.message ?? 'Could not delete your data.');
+            } finally {
+              setDeletingData(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   useEffect(() => {
     setDraftSeed(`${Date.now()}-${Math.random()}`);
   }, [primaryRecipient]);
@@ -194,54 +242,6 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
           setCheckingSendEligibility(false);
         }
       }
-    };
-
-    const clearCachedStatusForUser = (uid: string) => {
-      const userPrefix = `${uid}|`;
-      for (const cacheKey of onlineMailStatusCache.keys()) {
-        if (cacheKey.startsWith(userPrefix)) {
-          onlineMailStatusCache.delete(cacheKey);
-        }
-      }
-    };
-
-    const handleDeleteMyData = () => {
-      if (!user?.uid) {
-        return;
-      }
-      Alert.alert(
-        'Delete my send-status data?',
-        'This will remove your stored online send-status records from the database. Counter totals will not change.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              setDeletingData(true);
-              try {
-                const deletedCount = await deleteAllUserOnlineMailStatus(user.uid);
-                clearCachedStatusForUser(user.uid);
-                setHasAlreadySent(false);
-                setStatusPanel(null);
-                setLoadedStatusKey(currentStatusKey);
-                setSendState('idle');
-                setSendStateText('');
-                Alert.alert(
-                  'Data deleted',
-                  deletedCount > 0
-                    ? `Removed ${deletedCount} record(s).`
-                    : 'No stored send-status records were found for your account.',
-                );
-              } catch (error: any) {
-                Alert.alert('Delete failed', error?.message ?? 'Could not delete your data.');
-              } finally {
-                setDeletingData(false);
-              }
-            },
-          },
-        ],
-      );
     };
 
     void loadSendStatus();
