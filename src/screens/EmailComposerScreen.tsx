@@ -20,6 +20,7 @@ import {
   buildDefaultBody,
 } from '../config/emailTemplate';
 import {
+  cleanupExpiredUserOnlineMailStatus,
   getUserOnlineMailStatus,
   markUserOnlineMailSent,
   recordOnlineMail,
@@ -48,6 +49,7 @@ interface OnlineMailStatusPanel {
 }
 
 const onlineMailStatusCache = new Map<string, OnlineMailStatusPanel>();
+const onlineMailStatusCleanupCache = new Set<string>();
 
 function getLocalDayKey(date = new Date()): string {
   const year = date.getFullYear();
@@ -116,6 +118,19 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
       setCheckingSendEligibility(true);
       try {
+        const cleanupKey = `${user.uid}|${currentDayKey}`;
+        if (!onlineMailStatusCleanupCache.has(cleanupKey)) {
+          try {
+            await cleanupExpiredUserOnlineMailStatus(user.uid);
+            onlineMailStatusCleanupCache.add(cleanupKey);
+          } catch (cleanupError: any) {
+            console.warn(
+              'Failed to clean up expired user online-mail records:',
+              cleanupError?.message ?? 'Unknown error',
+            );
+          }
+        }
+
         const record = await getUserOnlineMailStatus(
           user.uid,
           primaryRecipient,

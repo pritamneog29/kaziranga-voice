@@ -94,11 +94,46 @@ stats/
       online_count   (number)
       offline_count  (number)
       last_updated   (timestamp)
+user_online_mail_status/
+  {uid__day__recipient}/
+    sent            (boolean)
+    sentAt          (timestamp)
+    expiresAt       (timestamp, +24h retention target)
+    recipient       (string)
+    dayKey          (string: YYYY-MM-DD)
+    senderUid       (string)
+    senderName      (string)
+    senderEmail     (string)
 ```
 
 Counter visibility is intended to be public. Use Firestore rules accordingly if you want unauthenticated users to read and write this counter.
 
 The app now uses a distributed (sharded) counter for writes, which scales far better under high concurrent traffic than a single document counter.
+Online sender-status records are pruned in-app after 24 hours. For strict automatic server-side expiry, enable Firestore TTL on `user_online_mail_status.expiresAt`.
+
+---
+
+## Firestore Security Rules
+
+Use the rules in [firestore.rules](./firestore.rules).
+
+`user_online_mail_status` now explicitly enforces owner-only delete access:
+
+- A user can only delete docs where `resource.data.senderUid == request.auth.uid`
+- A user can only create docs where `request.resource.data.senderUid == request.auth.uid`
+- A user can only update docs they own, and cannot change `senderUid`
+- Writes are schema-validated (allowed keys, types, lowercased recipient/email, dayKey format, and length limits)
+
+If you manage rules in Firebase Console, copy this block from [firestore.rules](./firestore.rules):
+
+```txt
+match /user_online_mail_status/{statusId} {
+  allow create: if isOwner(request.resource.data.senderUid);
+  allow read, delete: if isOwner(resource.data.senderUid);
+  allow update: if isOwner(resource.data.senderUid)
+    && request.resource.data.senderUid == resource.data.senderUid;
+}
+```
 
 ---
 

@@ -9,8 +9,10 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   increment,
   serverTimestamp,
+  Timestamp,
   onSnapshot,
   Unsubscribe,
   collection,
@@ -26,6 +28,7 @@ const COUNTER_REF = doc(db, 'stats', 'mail_counter');
 const COUNTER_SHARDS_REF = collection(db, 'stats', 'mail_counter', 'shards');
 const COUNTER_SHARD_COUNT = 32;
 const USER_ONLINE_MAIL_STATUS_COLLECTION = 'user_online_mail_status';
+const ONLINE_MAIL_STATUS_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 export interface MailStats {
   total: number;
@@ -72,6 +75,52 @@ function getOnlineMailStatusDocId(userId: string, recipient: string, dayKey: str
   return `${userId}__${dayKey}__${normalizeRecipientForLock(recipient)}`;
 }
 
+function getOnlineMailStatusExpiryDate(baseDate = new Date()): Date {
+  return new Date(baseDate.getTime() + ONLINE_MAIL_STATUS_RETENTION_MS);
+}
+
+function parseLocalDayKey(dayKey: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
+    return null;
+  }
+  const [yearStr, monthStr, dayStr] = dayKey.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+function shouldDeleteOnlineMailStatusRecord(
+  data: Record<string, any>,
+  now = new Date(),
+): boolean {
+  const nowMs = now.getTime();
+  const cutoffMs = nowMs - ONLINE_MAIL_STATUS_RETENTION_MS;
+  const expiresAt = data.expiresAt?.toDate?.();
+  if (expiresAt instanceof Date) {
+    return expiresAt.getTime() <= nowMs;
+  }
+
+  const sentAt = data.sentAt?.toDate?.();
+  if (sentAt instanceof Date) {
+    return sentAt.getTime() <= cutoffMs;
+  }
+
+  const parsedDay = parseLocalDayKey(String(data.dayKey ?? ''));
+  if (parsedDay) {
+    return parsedDay.getTime() <= cutoffMs;
+  }
+  return false;
+}
+
 async function incrementCounterShard(
   counterType: 'online_count' | 'offline_count',
 ): Promise<void> {
@@ -114,9 +163,31 @@ export async function markUserOnlineMailSent(
       senderUid: sender.uid,
       senderName: sender.name,
       senderEmail: sender.email.trim().toLowerCase(),
+      expiresAt: Timestamp.fromDate(getOnlineMailStatusExpiryDate()),
     },
     { merge: true },
   );
+}
+
+/** Delete this user's online-mail status records that are older than 24 hours. */
+export async function cleanupExpiredUserOnlineMailStatus(
+  userId: string,
+  now = new Date(),
+): Promise<number> {
+  const statusQuery = query(
+    collection(db, USER_ONLINE_MAIL_STATUS_COLLECTION),
+    where('senderUid', '==', userId),
+  );
+  const snap = await getDocs(statusQuery);
+  let deletedCount = 0;
+  for (const statusDoc of snap.docs) {
+    if (!shouldDeleteOnlineMailStatusRecord(statusDoc.data(), now)) {
+      continue;
+    }
+    await deleteDoc(statusDoc.ref);
+    deletedCount += 1;
+  }
+  return deletedCount;
 }
 
 /** Check whether a user has already sent to a recipient on a specific day. */
