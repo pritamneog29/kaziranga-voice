@@ -62,6 +62,9 @@ export default function App() {
     } finally {
       setUser(null);
       setScreen('login');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 
