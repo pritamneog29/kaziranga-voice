@@ -11,6 +11,7 @@ import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ImpactCounter from '../components/ImpactCounter';
 import ActionButton from '../components/ActionButton';
+import PetitionBlock from '../components/PetitionBlock';
 
 interface Props {
   user: { uid: string; name: string; email: string; photoUrl?: string } | null;
@@ -85,6 +86,8 @@ export default function HomeScreen({
 
           <View style={[styles.sideColumn, !isWide && styles.sideColumnNarrow]}>
             <ImpactCounter />
+
+            <PetitionBlock />
 
             <View style={[styles.storyCard, styles.storyFuture]}>
               <Text style={styles.sideTitle}>Future Plan</Text>

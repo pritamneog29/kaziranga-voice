@@ -26,6 +26,7 @@ import {
   markUserOnlineMailSent,
   recordOnlineMail,
 } from '../config/firestore';
+import PetitionBlock from '../components/PetitionBlock';
 
 interface Props {
   user: {
@@ -639,6 +640,8 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
           <View style={[styles.sideColumn, !isWide && styles.sideColumnNarrow]}>
             <ImpactCounter />
+
+            <PetitionBlock />
 
             <View style={[styles.storyCard, styles.storyBlue]}>
               <Text style={styles.sideTitle}>Compose guide</Text>

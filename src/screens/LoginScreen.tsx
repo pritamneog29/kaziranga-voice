@@ -21,6 +21,7 @@ import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
 import ImpactCounter from '../components/ImpactCounter';
+import PetitionBlock from '../components/PetitionBlock';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -215,6 +216,8 @@ export default function LoginScreen({ onSignIn }: Props) {
 
         <View style={[styles.sideColumn, !isWide && styles.sideColumnNarrow]}>
           <ImpactCounter />
+
+          <PetitionBlock />
 
           <View style={[styles.storyCard, styles.storyNeutral, styles.ctaCard]}>
             <Text style={styles.sideTitle}>Ready to send?</Text>

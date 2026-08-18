@@ -15,6 +15,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { COLORS } from '../config/theme';
 import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
+import PetitionBlock from '../components/PetitionBlock';
 import { recordOfflineLetter } from '../config/firestore';
 import { DIRECTOR_EMAIL } from '../config/emailTemplate';
 
@@ -159,6 +160,8 @@ export default function OfflineLetterScreen({ user, onBack, onHome }: Props) {
         <Text style={styles.addressLine}>Bokakhat, Golaghat, Assam – 785 612</Text>
         <Text style={styles.addressLine}>Email: {DIRECTOR_EMAIL}</Text>
       </View>
+
+      <PetitionBlock />
 
       {/* Letter Draft */}
       <Text style={styles.label}>Your Letter Draft</Text>
