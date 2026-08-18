@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -112,7 +112,9 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
       setLoadedStatusKey(currentStatusKey);
       setSendState('idle');
       setSendStateText('');
-      Alert.alert('Deleted', 'Your data has been deleted from the database.');
+      Alert.alert('Deleted', 'Your data has been deleted. You will need to sign in again to send emails.');
+      // Log out user so they have to re-authenticate and get a fresh token
+      onSignOut();
     } catch (error: any) {
       Alert.alert('Something went wrong', error?.message ?? 'Could not delete your data. Please try again.');
     } finally {
@@ -297,7 +299,9 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
     }
   };
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
+    console.log('🔴 DEBUG: handleSend called');
+    console.log('🔴 DEBUG: isSendLockedForUser =', isSendLockedForUser);
     if (isSendLockedForUser) {
       Alert.alert(
         'Already Sent',
@@ -306,6 +310,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
       return;
     }
 
+    console.log('🔴 DEBUG: senderEmail =', senderEmail, 'trimmed =', senderEmail.trim());
     if (!senderEmail.trim()) {
       Alert.alert(
        'Email Required',
@@ -314,6 +319,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
       return;
     }
 
+    console.log('🔴 DEBUG: user?.googleAccessToken =', !!user?.googleAccessToken);
     if (!user?.googleAccessToken) {
       Alert.alert(
        'Google Sign-In Required',
@@ -321,6 +327,8 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
       );
       return;
     }
+    
+    console.log('🔴 DEBUG: Passed all checks, proceeding to send...');
 
     setSending(true);
     setSendState('sending');
@@ -388,7 +396,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
     } finally {
       setSending(false);
     }
-  };
+  }, [isSendLockedForUser, senderEmail, user, sendViaGmailApi, parseRecipients, otherRecipients, subject, getBody, recordOnlineMail, markUserOnlineMailSent, currentDayKey, senderName, setHasAlreadySent, setLoadedStatusKey, currentStatusKey, normalizedPrimaryRecipient, setStatusPanel, onlineMailStatusCache, setSendState, setSendStateText, onBack, setSending, primaryRecipient]);
 
   const handleBodyChange = (text: string) => {
     setBody(text);
@@ -1001,3 +1009,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 });
+

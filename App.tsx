@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { SafeAreaView, StyleSheet, StatusBar, Alert } from 'react-native';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import LoginScreen from './src/screens/LoginScreen';
@@ -20,6 +20,7 @@ interface User {
 export default function App() {
   const [screen, setScreen] = useState<Screen>('login');
   const [user, setUser] = useState<User | null>(null);
+  const cachedAccessTokenRef = useRef<string | undefined>(undefined);
   const desiredStartScreen: Screen =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('start') === 'compose'
@@ -28,17 +29,26 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      console.log('🔴 onAuthStateChanged fired, firebaseUser:', firebaseUser?.uid);
+      console.log('🔴 cachedAccessToken (from ref) in auth state:', cachedAccessTokenRef.current);
       if (firebaseUser) {
-        setUser({
+        // Update user with cached token
+        const updatedUser = {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName ?? 'Google User',
           email: firebaseUser.email ?? '',
           photoUrl: firebaseUser.photoURL ?? undefined,
-          googleAccessToken: undefined,
-        });
-        setScreen(desiredStartScreen);
+          googleAccessToken: cachedAccessTokenRef.current,
+        };
+        setUser(updatedUser);
+        // If user is already logged in and URL has ?start=compose, go to email screen
+        if (desiredStartScreen === 'email') {
+          console.log('🔴 User already logged in with ?start=compose, setting screen to email');
+          setScreen('email');
+        }
       } else {
         setUser(null);
+        cachedAccessTokenRef.current = undefined;
         setScreen('login');
       }
     });
@@ -47,8 +57,15 @@ export default function App() {
   }, [desiredStartScreen]);
 
   const handleSignIn = (u: User) => {
+    console.log('🔴 App.tsx handleSignIn called with user:', u);
+    console.log('🔴 googleAccessToken in handleSignIn:', u.googleAccessToken);
+    if (u.googleAccessToken) {
+      console.log('🔴 Caching accessToken in ref:', u.googleAccessToken);
+      cachedAccessTokenRef.current = u.googleAccessToken;
+    }
     setUser(u);
-    setScreen(desiredStartScreen);
+    console.log('🔴 Setting screen to: email (navigate to compose after fresh sign-in)');
+    setScreen('email');
   };
 
   const handleSignOut = async () => {

@@ -27,6 +27,11 @@ export default function ActionButton({
   icon,
   inline = false,
 }: Props) {
+  const handlePress = () => {
+    console.log('🔴 ActionButton.onPress called, label:', label);
+    onPress();
+  };
+
   const bg =
     variant === 'primary'
       ? COLORS.primary
@@ -44,7 +49,7 @@ export default function ActionButton({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled || loading}
       style={[
         inline ? styles.buttonInline : styles.button,

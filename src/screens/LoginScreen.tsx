@@ -129,22 +129,28 @@ export default function LoginScreen({ onSignIn }: Props) {
 
   const handleWebSignIn = async () => {
     try {
+      console.log('🔴 handleWebSignIn called');
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('🔴 signInWithPopup result, uid:', result.user.uid);
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const accessToken = credential?.accessToken;
+      console.log('🔴 accessToken from credential:', accessToken ? 'EXISTS' : 'MISSING');
 
       if (!accessToken) {
         throw new Error('Google did not return Gmail access for this sign-in.');
       }
 
-      completeSignIn({
+      console.log('🔴 About to call onSignIn with accessToken');
+      onSignIn({
         uid: result.user.uid,
         name: result.user.displayName,
         email: result.user.email,
         photoUrl: result.user.photoURL,
-        accessToken,
+        googleAccessToken: accessToken,
       });
+      console.log('🔴 onSignIn finished');
     } catch (error) {
+      console.log('🔴 handleWebSignIn error:', error);
       const message =
         error instanceof Error ? error.message : 'Please try signing in again.';
       Alert.alert('Sign-in failed', message);
@@ -154,12 +160,15 @@ export default function LoginScreen({ onSignIn }: Props) {
   };
 
   const handleSignIn = async () => {
+    console.log('🔴 LoginScreen handleSignIn called, Platform.OS:', Platform.OS);
     setLoading(true);
     if (Platform.OS === 'web') {
+      console.log('🔴 Platform is web, calling handleWebSignIn');
       await handleWebSignIn();
       return;
     }
 
+    console.log('🔴 Platform is not web, calling promptAsync');
     await promptAsync();
   };
 
