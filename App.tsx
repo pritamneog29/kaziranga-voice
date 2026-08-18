@@ -2,12 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { SafeAreaView, StyleSheet, StatusBar, Alert } from 'react-native';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import LoginScreen from './src/screens/LoginScreen';
-import HomeScreen from './src/screens/HomeScreen';
 import EmailComposerScreen from './src/screens/EmailComposerScreen';
 import { COLORS } from './src/config/theme';
 import { auth } from './src/config/firebase';
 
-type Screen = 'login' | 'home' | 'email';
+type Screen = 'login' | 'email';
 
 interface User {
   uid: string;
@@ -21,11 +20,6 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('login');
   const [user, setUser] = useState<User | null>(null);
   const cachedAccessTokenRef = useRef<string | undefined>(undefined);
-  const desiredStartScreen: Screen =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('start') === 'compose'
-      ? 'email'
-      : 'home';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
@@ -41,8 +35,9 @@ export default function App() {
           googleAccessToken: cachedAccessTokenRef.current,
         };
         setUser(updatedUser);
-        // For session resumption (not fresh sign-in), navigate to desired screen if logged in
-        setScreen(desiredStartScreen);
+        // For session resumption, navigate directly to email composer
+        console.log('🔴 Session resumption - navigating to email composer');
+        setScreen('email');
       } else {
         setUser(null);
         cachedAccessTokenRef.current = undefined;
@@ -61,7 +56,8 @@ export default function App() {
       cachedAccessTokenRef.current = u.googleAccessToken;
     }
     setUser(u);
-    console.log('🔴 Setting screen to: email (navigate to compose after fresh sign-in)');
+    // Navigate directly to email composer after sign-in
+    console.log('🔴 Sign-in complete - navigating directly to email composer');
     setScreen('email');
   };
 
@@ -88,20 +84,11 @@ export default function App() {
       {screen === 'login' && (
         <LoginScreen onSignIn={handleSignIn} />
       )}
-      {screen === 'home' && (
-        <HomeScreen
-          user={user}
-          onNavigateEmail={() => setScreen('email')}
-          onSignOut={() => {
-            void handleSignOut();
-          }}
-        />
-      )}
       {screen === 'email' && (
         <EmailComposerScreen
           user={user}
-          onBack={() => setScreen('home')}
-          onHome={() => setScreen('home')}
+          onBack={() => setScreen('login')}
+          onHome={() => setScreen('login')}
           onSignOut={() => {
             void handleSignOut();
           }}
