@@ -190,6 +190,21 @@ export async function cleanupExpiredUserOnlineMailStatus(
   return deletedCount;
 }
 
+/** Delete all online-mail status records for this user. */
+export async function deleteAllUserOnlineMailStatus(userId: string): Promise<number> {
+  const statusQuery = query(
+    collection(db, USER_ONLINE_MAIL_STATUS_COLLECTION),
+    where('senderUid', '==', userId),
+  );
+  const snap = await getDocs(statusQuery);
+  let deletedCount = 0;
+  for (const statusDoc of snap.docs) {
+    await deleteDoc(statusDoc.ref);
+    deletedCount += 1;
+  }
+  return deletedCount;
+}
+
 /** Check whether a user has already sent to a recipient on a specific day. */
 export async function hasUserSentOnlineMail(
   userId: string,

@@ -21,6 +21,7 @@ import {
 } from '../config/emailTemplate';
 import {
   cleanupExpiredUserOnlineMailStatus,
+  deleteAllUserOnlineMailStatus,
   getUserOnlineMailStatus,
   markUserOnlineMailSent,
   recordOnlineMail,
@@ -73,6 +74,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
   const [body, setBody] = useState('');
   const [bodyEdited, setBodyEdited] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deletingData, setDeletingData] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const currentDayKey = getLocalDayKey();
   const normalizedPrimaryRecipient = primaryRecipient.trim().toLowerCase();
@@ -191,6 +193,54 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
           setCheckingSendEligibility(false);
         }
       }
+    };
+
+    const clearCachedStatusForUser = (uid: string) => {
+      const userPrefix = `${uid}|`;
+      for (const cacheKey of onlineMailStatusCache.keys()) {
+        if (cacheKey.startsWith(userPrefix)) {
+          onlineMailStatusCache.delete(cacheKey);
+        }
+      }
+    };
+
+    const handleDeleteMyData = () => {
+      if (!user?.uid) {
+        return;
+      }
+      Alert.alert(
+        'Delete my send-status data?',
+        'This will remove your stored online send-status records from the database. Counter totals will not change.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              setDeletingData(true);
+              try {
+                const deletedCount = await deleteAllUserOnlineMailStatus(user.uid);
+                clearCachedStatusForUser(user.uid);
+                setHasAlreadySent(false);
+                setStatusPanel(null);
+                setLoadedStatusKey(currentStatusKey);
+                setSendState('idle');
+                setSendStateText('');
+                Alert.alert(
+                  'Data deleted',
+                  deletedCount > 0
+                    ? `Removed ${deletedCount} record(s).`
+                    : 'No stored send-status records were found for your account.',
+                );
+              } catch (error: any) {
+                Alert.alert('Delete failed', error?.message ?? 'Could not delete your data.');
+              } finally {
+                setDeletingData(false);
+              }
+            },
+          },
+        ],
+      );
     };
 
     void loadSendStatus();
@@ -520,6 +570,7 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
               loading={sending}
               disabled={
                 sending ||
+                deletingData ||
                 checkingSendEligibility ||
                 !isCurrentStatusLoaded ||
                 isSendLockedForUser
@@ -527,6 +578,21 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
               variant="primary"
               icon="📨"
             />
+
+            <View style={styles.dataControls}>
+              <TouchableOpacity
+                style={[styles.deleteDataBtn, deletingData && styles.deleteDataBtnDisabled]}
+                onPress={handleDeleteMyData}
+                disabled={deletingData}
+              >
+                <Text style={styles.deleteDataBtnText}>
+                  {deletingData ? 'Deleting...' : 'Delete my send-status data'}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.dataControlsHint}>
+                This removes your `user_online_mail_status` records only. Email counter totals stay unchanged.
+              </Text>
+            </View>
 
             {statusPanel && isCurrentStatusLoaded && (
               <View style={styles.senderBlockCard}>
@@ -857,6 +923,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textPrimary,
     lineHeight: 18,
+  },
+  dataControls: {
+    marginTop: 10,
+    marginBottom: 2,
+    gap: 6,
+  },
+  dataControlsHint: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    lineHeight: 16,
+  },
+  deleteDataBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#8B1E1E',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  deleteDataBtnDisabled: {
+    opacity: 0.7,
+  },
+  deleteDataBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   statusBox: {
     borderRadius: 14,

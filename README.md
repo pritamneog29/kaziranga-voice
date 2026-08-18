@@ -110,6 +110,7 @@ Counter visibility is intended to be public. Use Firestore rules accordingly if 
 
 The app now uses a distributed (sharded) counter for writes, which scales far better under high concurrent traffic than a single document counter.
 Online sender-status records are pruned in-app after 24 hours. For strict automatic server-side expiry, enable Firestore TTL on `user_online_mail_status.expiresAt`.
+The Email Composer screen also includes a manual **Delete my send-status data** control for users who want immediate removal.
 
 ---
 
