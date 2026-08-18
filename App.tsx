@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, StatusBar, Alert } from 'react-native';
-import { signOut as firebaseSignOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import EmailComposerScreen from './src/screens/EmailComposerScreen';
@@ -20,10 +20,35 @@ interface User {
 export default function App() {
   const [screen, setScreen] = useState<Screen>('login');
   const [user, setUser] = useState<User | null>(null);
+  const desiredStartScreen: Screen =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('start') === 'compose'
+      ? 'email'
+      : 'home';
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      if (firebaseUser) {
+        setUser({
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName ?? 'Google User',
+          email: firebaseUser.email ?? '',
+          photoUrl: firebaseUser.photoURL ?? undefined,
+          googleAccessToken: undefined,
+        });
+        setScreen(desiredStartScreen);
+      } else {
+        setUser(null);
+        setScreen('login');
+      }
+    });
+
+    return unsubscribe;
+  }, [desiredStartScreen]);
 
   const handleSignIn = (u: User) => {
     setUser(u);
-    setScreen('home');
+    setScreen(desiredStartScreen);
   };
 
   const handleSignOut = async () => {
@@ -60,6 +85,9 @@ export default function App() {
           user={user}
           onBack={() => setScreen('home')}
           onHome={() => setScreen('home')}
+          onSignOut={() => {
+            void handleSignOut();
+          }}
         />
       )}
     </SafeAreaView>

@@ -51,6 +51,75 @@
             margin-bottom: 6px;
             font-size: 1.02em;
         }
+        .campaign-callout {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            width: 100%;
+        }
+        .campaign-copy {
+            flex: 1;
+            min-width: 0;
+        }
+        .campaign-copy p {
+            margin: 0;
+            color: #1b5e20;
+            line-height: 1.55;
+        }
+        .campaign-meta {
+            margin-top: 8px;
+            font-size: 0.92em;
+            color: #35693e;
+        }
+        .campaign-count-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 120px;
+        }
+        .campaign-count {
+            font-size: 4.4em;
+            line-height: 1;
+            font-weight: 900;
+            color: #1b5e20;
+            letter-spacing: -2px;
+        }
+        .campaign-count-label {
+            font-size: 0.95em;
+            color: #1b5e20;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .campaign-live .live-dot {
+            background: #2e7d32;
+        }
+        .campaign-count-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .campaign-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 0.78em;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            background: #e8e8e8;
+            border: 1.5px solid #2e7d32;
+            color: #2e7d32;
+            text-shadow: none;
+            box-shadow: none;
+            animation: live-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes live-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -78,19 +147,23 @@
             border-radius: 8px;
             margin: 40px 0;
         }
-        .cta a {
+        .cta-button {
             display: inline-block;
-            background: #2e7d32;
+            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
             color: white;
             padding: 15px 40px;
             text-decoration: none;
-            border-radius: 5px;
-            font-size: 1.1em;
-            font-weight: bold;
-            transition: background 0.3s;
+            border: 0;
+            border-radius: 999px;
+            font-size: 1.05em;
+            font-weight: 700;
+            transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
+            box-shadow: 0 4px 15px rgba(43, 125, 50, 0.28);
+            cursor: pointer;
         }
-        .cta a:hover {
-            background: #1b5e20;
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(43, 125, 50, 0.36);
         }
         .petition-card {
             margin-top: 14px;
@@ -140,9 +213,11 @@
             background: linear-gradient(135deg, #174B22 0%, #1b5e20 100%);
             color: white;
             padding: 50px 20px;
-            margin: 50px 0;
+            margin: 40px auto;
             border-radius: 12px;
             text-align: center;
+            max-width: 900px;
+            position: relative;
         }
         .tracker-heading {
             font-size: 1.5em;
@@ -203,31 +278,293 @@
         }
         .tracker-cta a {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+            border: 0;
             color: white;
             padding: 12px 30px;
             text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: all 0.3s;
+            border-radius: 999px;
+            font-weight: 700;
+            transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
+            box-shadow: 0 4px 15px rgba(43, 125, 50, 0.28);
         }
         .tracker-cta a:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(43, 125, 50, 0.36);
+        }
+        .email-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 183, 77, 0.2);
+            border: 2px solid rgba(255, 183, 77, 0.5);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #FFD38A;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+        /* Hide badge on app page */
+        body.app-page .email-badge {
+            display: none;
+        }
+        .email-badge-number {
+            font-size: 1.4em;
+            font-weight: 900;
+        }
+        .live-indicator-small {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 183, 77, 0.16);
+            border: 1px solid rgba(255, 183, 77, 0.34);
+            border-radius: 20px;
+            padding: 3px 8px;
+            font-size: 0.7em;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: #FFD38A;
+        }
+        .steps-section {
+            background: #f5f5f5;
+            padding: 50px 20px;
+            margin: 40px 0;
+            border-radius: 12px;
+        }
+        .story-section {
+            margin: 40px 0;
+        }
+        .story-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+        }
+        .story-card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #2e7d32;
+        }
+        .story-card h3 {
+            color: #1b5e20;
+            margin-bottom: 10px;
+            font-size: 1.15em;
+        }
+        .story-card p,
+        .story-card li {
+            color: #555;
+            font-size: 0.96em;
+            line-height: 1.6;
+        }
+        .story-card ul {
+            margin-left: 18px;
+            margin-bottom: 0;
+        }
+        .story-card.story-orange {
+            border-left-color: #f57c00;
+        }
+        .story-card.story-yellow {
+            border-left-color: #c9a227;
+        }
+        .story-card.story-blue {
+            border-left-color: #2b7fff;
+        }
+        .steps-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        .step {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .step:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: 900;
+            margin: 0 auto 15px;
+        }
+        .step h3 {
+            color: #1b5e20;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .step p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .steps-cta {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .steps-cta a {
+            display: inline-block;
+            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+            color: white;
+            padding: 18px 50px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(43, 125, 50, 0.3);
+        }
+        .steps-cta a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(43, 125, 50, 0.4);
+        }
+        .header-footer-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            margin-top: 18px;
+            padding: 0 10px;
+        }
+        .petition-pill {
+            display: inline-block;
+            background: white;
+            color: #1b5e20;
+            border: 2px solid rgba(255,255,255,0.7);
+            border-radius: 999px;
+            padding: 10px 28px;
+            font-size: 1em;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s, transform 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+        }
+        .petition-pill:hover {
+            background: #e8f5e9;
+            transform: translateY(-2px);
+        }
+        .header-privacy {
+            font-size: 0.82em;
+            color: rgba(255,255,255,0.75);
+            max-width: 560px;
+            text-align: center;
+            margin: 0;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Kaziranga Voice (kazirangavoice.in)</h1>
+        <h1>Kaziranga Voice 🐘</h1>
         <p>Send your voice to protect Kaziranga National Park</p>
-        <p style="font-size: 1em; margin-top: 15px; opacity: 0.95;">A web application that makes it easy to send advocacy emails to the Director of Kaziranga National Park to protect its Eco Sensitive Zone, wildlife corridors, and indigenous lands.</p>
-        <div class="privacy-callout">
-            <strong>🔐 Big tech already knows plenty about us 😅</strong>
-            <div>Here, we only use Google sign-in to send your email and keep count for Kaziranga — we don’t save your data or use it for ads. We’re also working on ways to count emails without login in the future ✨ Too shy to sign in? You can still sign the petition 📝</div>
+        <div class="email-badge">
+            <span class="live-indicator-small">
+                <span class="live-dot"></span>
+                LIVE
+            </span>
+            <span class="email-badge-number" id="badge-counter">0</span>
+            <span>emails sent</span>
         </div>
+        <div class="privacy-callout">
+            <strong>📈 Campaign activity</strong>
+            <div class="campaign-callout">
+                <div class="campaign-copy">
+                    <p><strong>Emails sent</strong></p>
+                    <p class="campaign-meta">Total emails sent to Kaziranga authorities</p>
+                    <p class="campaign-meta" id="last-updated-headline">This tracker updates in real-time with every email sent through Kaziranga Voice.</p>
+                    <p class="campaign-meta" style="margin-top:6px;">Last sent <span id="headline-last-updated">Initializing...</span></p>
+                </div>
+                <div class="campaign-count-stack">
+                    <span class="campaign-live">
+                        <span class="live-dot"></span>
+                        LIVE
+                    </span>
+                    <div class="campaign-count" id="headline-counter">0</div>
+                    <div class="campaign-count-label">emails sent</div>
+                </div>
+            </div>
+        </div>
+            <div class="header-footer-row">
+                <a
+                    href="https://www.change.org/p/save-kaziranga-protect-wildlife-land-and-people"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="petition-pill"
+                >✍️ Sign the petition</a>
+                <p class="header-privacy">🔒 Your privacy matters — this site only uses your Google account to send emails on your behalf. I never store your email content or share your data.</p>
+            </div>
     </header>
+
+    <div class="steps-section">
+    <div class="steps-container">
+        <div class="step">
+            <div class="step-number">1</div>
+                <h3>Sign In</h3>
+                <p>Click to sign in with your Google account—quick and secure.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Edit Your Message</h3>
+                <p>Customize the email with your personal concerns about Kaziranga.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Send It</h3>
+                <p>Submit your voice directly to the Director of Kaziranga National Park.</p>
+            </div>
+        </div>
+        <div class="steps-cta">
+            <button data-google-signin class="cta-button">Get Started Now</button>
+        </div>
+    </div>
+
+    <div class="story-section">
+        <div class="story-grid">
+            <div class="story-card story-green">
+                <h3>Protect Kaziranga</h3>
+                <p>
+                    Kaziranga National Park — a UNESCO World Heritage Site — is under threat. The proposed reduction of its Eco-Sensitive Zone and the construction of a luxury hotel on indigenous lands endanger the world's largest population of the Indian one-horned rhinoceros, Asian elephants, tigers, wild water buffalo, and hundreds of bird species.
+                    This app makes it easy to <strong>raise your voice</strong> — send a pre-drafted email to the Director of Kaziranga National Park. This website tracks every successful email sent in the live tracker below.
+                </p>
+            </div>
+            <div class="story-card story-orange">
+                <h3>Protect Indigenous Lands</h3>
+                <p>
+                    Indigenous advocates such as Pranab Doley from the Mising community have helped spotlight that the land around Kaziranga is not just habitat, but homeland. The proposed hotel development must not silence indigenous voices or override their land, livelihood, cultural, and customary rights.
+                </p>
+            </div>
+            <div class="story-card story-yellow">
+                <h3>Why every message matters</h3>
+                <ul>
+                    <li>🦏 Kaziranga hosts ~2,600 one-horned rhinos — 70% of the world's population.</li>
+                    <li>🐯 It has one of the highest tiger densities globally.</li>
+                    <li>🐘 Over 1,000 Asian elephants roam its grasslands.</li>
+                    <li>🐦 480+ bird species — a recognised Important Bird Area.</li>
+                    <li>🌊 The ESZ buffer is critical for flood-season wildlife migration.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <section>
@@ -281,28 +618,6 @@
             </ul>
         </section>
 
-        <div class="tracker-section">
-            <div class="tracker-heading">
-                Campaign Activity
-                <span class="live-indicator">
-                    <span class="live-dot"></span>
-                    LIVE
-                </span>
-            </div>
-            <div class="counter-display">
-                <div class="counter-label">Emails sent</div>
-                <div class="counter-number" id="email-counter">0</div>
-                <div class="counter-label">Total emails sent to Kaziranga authorities</div>
-            </div>
-            <div class="counter-meta">
-                <div>This tracker updates in real-time with every email sent through Kaziranga Voice.</div>
-                <div id="last-updated" style="margin-top: 10px; font-size: 0.9em; color: rgba(255, 255, 255, 0.7);">Initializing...</div>
-            </div>
-            <div class="tracker-cta">
-                <a href="/app">Start sending emails now</a>
-            </div>
-        </div>
-
         <section>
             <h2>Why Kaziranga Matters</h2>
             <p>
@@ -311,12 +626,6 @@
                 Every voice matters in conservation efforts.
             </p>
         </section>
-
-        <div class="cta">
-            <h2>Ready to make a difference?</h2>
-            <p>Use Kaziranga Voice to send your message to the decision-makers.</p>
-            <a href="/app">Open Kaziranga Voice App</a>
-        </div>
 
         <section>
             <h2>Privacy & Security</h2>
@@ -336,9 +645,11 @@
         </p>
     </footer>
 
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script type="module">
         // Import Firebase SDKs
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
         import { getFirestore, doc, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
         // Firebase configuration (injected at build time)
@@ -346,10 +657,43 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        googleProvider.addScope('profile');
+        googleProvider.addScope('email');
+        googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');
+
+        // Set up click handlers for all CTA buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctaButtons = document.querySelectorAll('[data-google-signin]');
+            ctaButtons.forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    button.disabled = true;
+                    button.textContent = 'Signing in...';
+                    
+                    try {
+                        // Sign in using Firebase
+                        await signInWithPopup(auth, googleProvider);
+                        // Redirect to the compose screen after successful sign-in
+                        window.location.href = '/app?start=compose';
+                    } catch (error) {
+                        console.error('Sign-in failed:', error);
+                        alert('Sign-in failed. Please try again.');
+                        button.disabled = false;
+                        button.textContent = 'Get Started Now';
+                    }
+                });
+            });
+        });
 
         // Counter elements
         const counterElement = document.getElementById('email-counter');
+        const badgeCounter = document.getElementById('badge-counter');
+        const headlineCounter = document.getElementById('headline-counter');
+        const headlineLastUpdated = document.getElementById('headline-last-updated');
+        const headlineTrackerText = document.getElementById('last-updated-headline');
         const lastUpdatedElement = document.getElementById('last-updated');
 
         let displayedTotal = 0;
@@ -372,7 +716,11 @@
                 const easedProgress = 1 - Math.pow(1 - progress, 3);
 
                 displayedTotal = Math.round(startValue + (endValue - startValue) * easedProgress);
-                counterElement.textContent = displayedTotal.toLocaleString();
+                if (counterElement) counterElement.textContent = displayedTotal.toLocaleString();
+                badgeCounter.textContent = displayedTotal.toLocaleString();
+                if (headlineCounter) {
+                    headlineCounter.textContent = displayedTotal.toLocaleString();
+                }
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
@@ -397,7 +745,13 @@
             const combinedDate = latestDate(legacyStats.last_updated, shardStats.last_updated);
             
             animateCounter(combinedTotal);
-            lastUpdatedElement.textContent = formatDate(combinedDate);
+            if (lastUpdatedElement) lastUpdatedElement.textContent = formatDate(combinedDate);
+            if (headlineTrackerText) {
+                headlineTrackerText.textContent = 'This tracker updates in real-time with every email sent through Kaziranga Voice.';
+            }
+            if (headlineLastUpdated) {
+                headlineLastUpdated.textContent = combinedDate ? combinedDate.toLocaleString() : 'No sends yet';
+            }
         };
 
         // Listen to legacy counter

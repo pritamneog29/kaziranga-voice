@@ -11,7 +11,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { COLORS } from '../config/theme';
-import AppHeader from '../components/AppHeader';
 import ActionButton from '../components/ActionButton';
 import ImpactCounter from '../components/ImpactCounter';
 import {
@@ -38,6 +37,7 @@ interface Props {
   } | null;
   onBack: () => void;
   onHome: () => void;
+  onSignOut: () => void;
 }
 
 type SendState = 'idle' | 'sending' | 'sent' | 'failed';
@@ -60,7 +60,7 @@ function getLocalDayKey(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
+export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }: Props) {
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const [draftSeed, setDraftSeed] = useState(
@@ -101,43 +101,23 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
     }
   };
 
-  const handleDeleteMyData = () => {
-    if (!user?.uid) {
-      return;
+  const handleDeleteMyData = async () => {
+    if (!user?.uid) return;
+    setDeletingData(true);
+    try {
+      await deleteAllUserOnlineMailStatus(user.uid);
+      clearCachedStatusForUser(user.uid);
+      setHasAlreadySent(false);
+      setStatusPanel(null);
+      setLoadedStatusKey(currentStatusKey);
+      setSendState('idle');
+      setSendStateText('');
+      Alert.alert('Deleted', 'Your data has been deleted from the database.');
+    } catch (error: any) {
+      Alert.alert('Something went wrong', error?.message ?? 'Could not delete your data. Please try again.');
+    } finally {
+      setDeletingData(false);
     }
-    Alert.alert(
-      'Delete my send-status data?',
-      'This will remove your stored online send-status records from the database. Counter totals will not change.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingData(true);
-            try {
-              const deletedCount = await deleteAllUserOnlineMailStatus(user.uid);
-              clearCachedStatusForUser(user.uid);
-              setHasAlreadySent(false);
-              setStatusPanel(null);
-              setLoadedStatusKey(currentStatusKey);
-              setSendState('idle');
-              setSendStateText('');
-              Alert.alert(
-                'Data deleted',
-                deletedCount > 0
-                  ? `Removed ${deletedCount} record(s).`
-                  : 'No stored send-status records were found for your account.',
-              );
-            } catch (error: any) {
-              Alert.alert('Delete failed', error?.message ?? 'Could not delete your data.');
-            } finally {
-              setDeletingData(false);
-            }
-          },
-        },
-      ],
-    );
   };
 
   useEffect(() => {
@@ -433,16 +413,45 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.pageShell}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+      {/* Green header bar — matches landing page */}
+      <View style={styles.pageHeader}>
+        <TouchableOpacity
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              window.location.href = '/';
+            } else {
+              onBack();
+            }
+          }}
+          style={styles.backBtn}
+        >
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
+        <Text style={styles.pageHeaderTitle}>🦏 Kaziranga Voice</Text>
+        <Text style={styles.pageHeaderSub}>📧 Compose Email</Text>
+      </View>
 
-        <AppHeader size="small" onPressHome={onHome} />
-
-        <Text style={styles.screenTitle}>📧 Compose Email</Text>
+      <View style={styles.pageShell}>
         <View style={[styles.magazineLayout, isWide ? styles.magazineWide : styles.magazineNarrow]}>
           <View style={[styles.mainColumn, !isWide && styles.mainColumnNarrow]}>
+            {!isWide && (
+              <>
+                <View style={[styles.storyCard, styles.storyBlue]}>
+                  <Text style={styles.sideTitle}>Compose guide</Text>
+                  <Text style={styles.sideText}>
+                    Keep the message direct, personal, and rooted in Kaziranga's wildlife and indigenous land rights.
+                  </Text>
+                </View>
+
+                <View style={[styles.storyCard, styles.storyOrange]}>
+                  <Text style={styles.sideTitle}>Personal touch</Text>
+                  <Text style={styles.sideText}>
+                    Add one memory or observation from Kaziranga to make the email feel authentic.
+                  </Text>
+                </View>
+              </>
+            )}
+
             <Text style={styles.label}>Primary Recipient (To:)</Text>
             <TextInput
               style={styles.input}
@@ -582,17 +591,14 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
             <View style={styles.dataControls}>
               <TouchableOpacity
-                style={[styles.deleteDataBtn, deletingData && styles.deleteDataBtnDisabled]}
                 onPress={handleDeleteMyData}
                 disabled={deletingData}
+                style={[styles.resetSendBtn, deletingData && styles.resetSendBtnDisabled]}
               >
-                <Text style={styles.deleteDataBtnText}>
-                  {deletingData ? 'Deleting...' : 'Delete my send-status data'}
+                <Text style={styles.resetSendBtnText}>
+                  {deletingData ? 'Deleting...' : '🗑 Delete My Data'}
                 </Text>
               </TouchableOpacity>
-              <Text style={styles.dataControlsHint}>
-                This removes your `user_online_mail_status` records only. Email counter totals stay unchanged.
-              </Text>
             </View>
 
             {statusPanel && isCurrentStatusLoaded && (
@@ -636,6 +642,15 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
               Signed-in users send through Gmail API with delivery confirmation and
               each successful send is counted in the live tracker.
             </Text>
+
+            <View style={styles.signOutWrap}>
+              <ActionButton
+                label="Sign out"
+                onPress={onSignOut}
+                variant="outline"
+                icon="🚪"
+              />
+            </View>
           </View>
 
           <View style={[styles.sideColumn, !isWide && styles.sideColumnNarrow]}>
@@ -643,30 +658,23 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 
             <PetitionBlock />
 
-            <View style={[styles.storyCard, styles.storyBlue]}>
-              <Text style={styles.sideTitle}>Compose guide</Text>
-              <Text style={styles.sideText}>
-                Keep the message direct, personal, and rooted in Kaziranga's wildlife and indigenous land rights.
-              </Text>
-            </View>
+            {isWide && (
+              <>
+                <View style={[styles.storyCard, styles.storyBlue]}>
+                  <Text style={styles.sideTitle}>Compose guide</Text>
+                  <Text style={styles.sideText}>
+                    Keep the message direct, personal, and rooted in Kaziranga's wildlife and indigenous land rights.
+                  </Text>
+                </View>
 
-            <View style={[styles.storyCard, styles.storyOrange]}>
-              <Text style={styles.sideTitle}>Personal touch</Text>
-              <Text style={styles.sideText}>
-                Add one memory or observation from Kaziranga to make the email feel authentic.
-              </Text>
-            </View>
-
-            <View style={[styles.storyCard, styles.storyNeutral]}>
-              <Text style={styles.sideTitle}>Status</Text>
-              <Text style={styles.sideText}>
-                {sendState === 'sending'
-                  ? 'Sending right now...'
-                  : sendState === 'sent'
-                    ? 'Sent and counted.'
-                    : 'Ready when you are.'}
-              </Text>
-            </View>
+                <View style={[styles.storyCard, styles.storyOrange]}>
+                  <Text style={styles.sideTitle}>Personal touch</Text>
+                  <Text style={styles.sideText}>
+                    Add one memory or observation from Kaziranga to make the email feel authentic.
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -677,15 +685,35 @@ export default function EmailComposerScreen({ user, onBack, onHome }: Props) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: COLORS.background,
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 36,
+    backgroundColor: '#FFFFFF',
     paddingBottom: 40,
+  },
+  pageHeader: {
+    backgroundColor: '#174B22',
+    paddingTop: Platform.OS === 'ios' ? 56 : 36,
+    paddingBottom: 28,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  pageHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: 8,
+    letterSpacing: 0.3,
+  },
+  pageHeaderSub: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 4,
   },
   pageShell: {
     width: '100%',
     maxWidth: 1240,
     alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 24,
   },
   magazineLayout: {
     marginTop: 14,
@@ -768,15 +796,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: COLORS.textSecondary,
   },
-  backBtn: { marginBottom: 12 },
-  backText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.primaryDark,
-    marginTop: 8,
-    marginBottom: 4,
-  },
+  backBtn: { alignSelf: 'flex-start', marginBottom: 4 },
+  backText: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '600' },
   recipientBadge: {
     backgroundColor: '#E8F5E9',
     color: COLORS.primary,
@@ -811,8 +832,8 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E4EAE2',
+    borderWidth: 1.5,
+    borderColor: '#C8DFC8',
     padding: 12,
     fontSize: 14,
     color: COLORS.textPrimary,
@@ -873,8 +894,8 @@ const styles = StyleSheet.create({
   bodyInput: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E4EAE2',
+    borderWidth: 1.5,
+    borderColor: '#C8DFC8',
     padding: 12,
     fontSize: 13,
     color: COLORS.textPrimary,
@@ -882,10 +903,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previewBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FBF8',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E4EAE2',
+    borderWidth: 1.5,
+    borderColor: '#C8DFC8',
     padding: 14,
     minHeight: 240,
     marginBottom: 10,
@@ -928,29 +949,22 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   dataControls: {
-    marginTop: 10,
+    marginTop: 6,
     marginBottom: 2,
-    gap: 6,
+    alignItems: 'center',
   },
-  dataControlsHint: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    lineHeight: 16,
+  resetSendBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
   },
-  deleteDataBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#8B1E1E',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+  resetSendBtnDisabled: {
+    opacity: 0.5,
   },
-  deleteDataBtnDisabled: {
-    opacity: 0.7,
-  },
-  deleteDataBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+  resetSendBtnText: {
+    fontSize: 15,
     fontWeight: '700',
+    color: '#C62828',
+    textDecorationLine: 'underline',
   },
   statusBox: {
     borderRadius: 14,
@@ -982,5 +996,8 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginTop: 8,
     lineHeight: 17,
+  },
+  signOutWrap: {
+    marginTop: 16,
   },
 });

@@ -51,26 +51,22 @@ export default function HomeScreen({
             <View style={[styles.storyCard, styles.storyGreen]}>
               <Text style={styles.storyTitle}>Protect Kaziranga</Text>
               <Text style={styles.storyText}>
-                Kaziranga National Park — a UNESCO World Heritage Site — is under
-                threat. The proposed reduction of its Eco-Sensitive Zone and the
-                construction of a luxury hotel on indigenous lands endanger the
-                world's largest population of the Indian one-horned rhinoceros,
-                Asian elephants, tigers, wild water buffalo, and hundreds of bird
-                species.
-              </Text>
-              <Text style={styles.storyText}>
-                This app makes it easy to <Text style={styles.bold}>raise your voice</Text> — send a pre-drafted email to the Director of Kaziranga National Park. This website tracks every successful email sent in the live tracker below.
+                Kaziranga National Park — a UNESCO World Heritage Site — is under threat.
+                The proposed reduction of its Eco-Sensitive Zone and the construction of a
+                luxury hotel on indigenous lands endanger the world's largest population of
+                the Indian one-horned rhinoceros, Asian elephants, tigers, wild water buffalo,
+                and hundreds of bird species.
+                {'\n'}This app makes it easy to <Text style={styles.bold}>raise your voice</Text> — send a pre-drafted email to the Director of Kaziranga National Park. This website tracks every successful email sent in the live tracker below.
               </Text>
             </View>
 
             <View style={[styles.storyCard, styles.storyOrange]}>
               <Text style={styles.storyTitle}>Protect Indigenous Lands</Text>
               <Text style={styles.storyText}>
-                Indigenous advocates such as Pranab Doley from the Mising
-                community have helped spotlight that the land around Kaziranga is
-                not just habitat, but homeland. The proposed hotel development
-                must not silence indigenous voices or override their land,
-                livelihood, cultural, and customary rights.
+                Indigenous advocates such as Pranab Doley from the Mising community have
+                helped spotlight that the land around Kaziranga is not just habitat, but
+                homeland. The proposed hotel development must not silence indigenous voices
+                or override their land, livelihood, cultural, and customary rights.
               </Text>
             </View>
 
