@@ -91,6 +91,86 @@
         footer a:hover {
             text-decoration: underline;
         }
+        .tracker-section {
+            background: linear-gradient(135deg, #174B22 0%, #1b5e20 100%);
+            color: white;
+            padding: 50px 20px;
+            margin: 50px 0;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .tracker-heading {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 183, 77, 0.16);
+            border: 1px solid rgba(255, 183, 77, 0.34);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.8em;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: #FFD38A;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #B8F7C5;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .counter-display {
+            margin: 30px 0;
+        }
+        .counter-number {
+            font-size: 5em;
+            font-weight: 900;
+            line-height: 1;
+            margin: 20px 0;
+            letter-spacing: -2px;
+        }
+        .counter-label {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 15px;
+        }
+        .counter-meta {
+            font-size: 0.95em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+        .tracker-cta {
+            margin-top: 30px;
+        }
+        .tracker-cta a {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .tracker-cta a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
     </style>
 </head>
 <body>
@@ -138,6 +218,28 @@
             </ul>
         </section>
 
+        <div class="tracker-section">
+            <div class="tracker-heading">
+                Campaign Activity
+                <span class="live-indicator">
+                    <span class="live-dot"></span>
+                    LIVE
+                </span>
+            </div>
+            <div class="counter-display">
+                <div class="counter-label">Emails sent</div>
+                <div class="counter-number" id="email-counter">0</div>
+                <div class="counter-label">Total emails sent to Kaziranga authorities</div>
+            </div>
+            <div class="counter-meta">
+                <div>This tracker updates in real-time with every email sent through Kaziranga Voice.</div>
+                <div id="last-updated" style="margin-top: 10px; font-size: 0.9em; color: rgba(255, 255, 255, 0.7);">Initializing...</div>
+            </div>
+            <div class="tracker-cta">
+                <a href="/app">Start sending emails now</a>
+            </div>
+        </div>
+
         <section>
             <h2>Why Kaziranga Matters</h2>
             <p>
@@ -170,5 +272,110 @@
             <a href="/terms-of-service.html">Terms of Service</a>
         </p>
     </footer>
+
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+        import { getFirestore, doc, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEzPqTb1x7QYkYl3GQx9wQVXn0fJvmPwI",
+            authDomain: "kaziranga-voice.firebaseapp.com",
+            projectId: "kaziranga-voice",
+            storageBucket: "kaziranga-voice.appspot.com",
+            messagingSenderId: "826688821803",
+            appId: "1:826688821803:web:07dc0b91e6b40b4d45e3c4",
+            measurementId: "G-QTVDVX8L5C"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Counter elements
+        const counterElement = document.getElementById('email-counter');
+        const lastUpdatedElement = document.getElementById('last-updated');
+
+        let displayedTotal = 0;
+
+        function formatDate(date) {
+            if (!date) return 'No sends yet';
+            return `Last sent ${date.toLocaleString()}`;
+        }
+
+        function animateCounter(endValue) {
+            const startValue = displayedTotal;
+            if (startValue === endValue) return;
+
+            const durationMs = 1100;
+            const startTime = Date.now();
+
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / durationMs, 1);
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+                displayedTotal = Math.round(startValue + (endValue - startValue) * easedProgress);
+                counterElement.textContent = displayedTotal.toLocaleString();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            };
+
+            requestAnimationFrame(animate);
+        }
+
+        function latestDate(a, b) {
+            if (!a) return b;
+            if (!b) return a;
+            return a > b ? a : b;
+        }
+
+        // Subscribe to stats
+        let legacyStats = { total: 0, last_updated: null };
+        let shardStats = { total: 0, last_updated: null };
+
+        const emitCombined = () => {
+            const combinedTotal = legacyStats.total + shardStats.total;
+            const combinedDate = latestDate(legacyStats.last_updated, shardStats.last_updated);
+            
+            animateCounter(combinedTotal);
+            lastUpdatedElement.textContent = formatDate(combinedDate);
+        };
+
+        // Listen to legacy counter
+        const legacyRef = doc(db, 'stats', 'mail_counter');
+        onSnapshot(legacyRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                legacyStats = {
+                    total: Number(data.total ?? 0),
+                    last_updated: data.last_updated ? data.last_updated.toDate() : null
+                };
+            } else {
+                legacyStats = { total: 0, last_updated: null };
+            }
+            emitCombined();
+        });
+
+        // Listen to shards
+        const shardsRef = collection(db, 'stats', 'mail_counter', 'shards');
+        onSnapshot(shardsRef, (snap) => {
+            let total = 0;
+            let mostRecent = null;
+
+            snap.forEach((shardDoc) => {
+                const shardData = shardDoc.data();
+                total += Number(shardData.total ?? 0);
+                const shardDate = shardData.last_updated ? shardData.last_updated.toDate() : null;
+                mostRecent = latestDate(mostRecent, shardDate);
+            });
+
+            shardStats = { total, last_updated: mostRecent };
+            emitCombined();
+        });
+    </script>
 </body>
 </html>
