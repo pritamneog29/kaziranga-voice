@@ -41,11 +41,8 @@ export default function App() {
           googleAccessToken: cachedAccessTokenRef.current,
         };
         setUser(updatedUser);
-        // If user is already logged in and URL has ?start=compose, go to email screen
-        if (desiredStartScreen === 'email') {
-          console.log('🔴 User already logged in with ?start=compose, setting screen to email');
-          setScreen('email');
-        }
+        // For session resumption (not fresh sign-in), navigate to desired screen if logged in
+        setScreen(desiredStartScreen);
       } else {
         setUser(null);
         cachedAccessTokenRef.current = undefined;
@@ -54,7 +51,7 @@ export default function App() {
     });
 
     return unsubscribe;
-  }, [desiredStartScreen]);
+  }, []);
 
   const handleSignIn = (u: User) => {
     console.log('🔴 App.tsx handleSignIn called with user:', u);

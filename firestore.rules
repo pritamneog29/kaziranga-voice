@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Public campaign counter reads are required for the landing page tracker.
+    match /stats/{docId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+    }
+
+    match /stats/{docId}/shards/{shardId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+    }
+
+    // Offline letter records are user-private.
+    match /offline_letters/{letterId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Online mail status is user-private and deletions are limited to owner only.
+    match /user_online_mail_status/{statusId} {
+      function hasOnlyStatusFields(data) {
+        return data.keys().hasOnly([
+          'sent',
+          'sentAt',
+          'recipient',
+          'dayKey',
+          'senderUid',
+          'senderName',
+          'senderEmail',
+          'expiresAt',
+        ]);
+      }
+
+      function hasValidStatusTypes(data) {
+        return data.sent is bool
+          && data.sentAt is timestamp
+          && data.recipient is string
+          && data.dayKey is string
+          && data.senderUid is string
+          && data.senderName is string
+          && data.senderEmail is string
+          && data.expiresAt is timestamp;
+      }
+
+      function hasValidStatusFormat(data) {
+        return data.sent == true
+          && data.senderUid == request.auth.uid
+          && data.sentAt == request.time
+          && data.recipient == data.recipient.lower()
+          && data.senderEmail == data.senderEmail.lower()
+          && data.recipient.size() > 0
+          && data.recipient.size() <= 320
+          && data.dayKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && data.senderName.size() > 0
+          && data.senderName.size() <= 120
+          && data.senderEmail.size() > 0
+          && data.senderEmail.size() <= 320
+          && data.senderEmail.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+          && statusId.matches('^' + request.auth.uid + '__[0-9]{4}-[0-9]{2}-[0-9]{2}__[^/]+$');
+      }
+
+      function isValidStatusWrite() {
+        return isSignedIn()
+          && hasOnlyStatusFields(request.resource.data)
+          && hasValidStatusTypes(request.resource.data)
+          && hasValidStatusFormat(request.resource.data);
+      }
+
+      allow create: if isValidStatusWrite();
+      allow read, delete: if isOwner(resource.data.senderUid);
+      allow update: if isOwner(resource.data.senderUid)
+        && request.resource.data.senderUid == resource.data.senderUid
+        && isValidStatusWrite();
+    }
+  }
+}
