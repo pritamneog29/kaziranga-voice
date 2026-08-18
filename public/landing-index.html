@@ -676,8 +676,8 @@
                     try {
                         // Sign in using Firebase
                         await signInWithPopup(auth, googleProvider);
-                        // Redirect to the compose screen after successful sign-in
-                        window.location.href = '/app?start=compose';
+                        // Redirect to app WITHOUT params - let it stabilize before navigating to compose
+                        window.location.href = '/app';
                     } catch (error) {
                         console.error('Sign-in failed:', error);
                         alert('Sign-in failed. Please try again.');
