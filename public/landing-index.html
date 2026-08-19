@@ -446,23 +446,6 @@
             margin-top: 18px;
             padding: 0 10px;
         }
-        .petition-pill {
-            display: inline-block;
-            background: white;
-            color: #1b5e20;
-            border: 2px solid rgba(255,255,255,0.7);
-            border-radius: 999px;
-            padding: 10px 28px;
-            font-size: 1em;
-            font-weight: 700;
-            text-decoration: none;
-            transition: background 0.2s, color 0.2s, transform 0.2s;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-        }
-        .petition-pill:hover {
-            background: #e8f5e9;
-            transform: translateY(-2px);
-        }
         .campaign-activities-label {
             font-size: 0.78em;
             color: rgba(255,255,255,0.6);
@@ -474,9 +457,24 @@
         .campaign-activities-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px 18px;
             justify-content: center;
             margin-bottom: 4px;
+        }
+        .campaign-activity-link {
+            color: #fff;
+            font-size: 0.88em;
+            font-weight: 700;
+            text-decoration: none;
+            opacity: 0.95;
+        }
+        .campaign-activity-link:hover {
+            text-decoration: underline;
+        }
+        .campaign-activity-separator {
+            color: rgba(255,255,255,0.55);
+            font-weight: 600;
+            user-select: none;
         }
         .header-privacy {
             font-size: 0.82em;
@@ -526,19 +524,21 @@
                         href="https://www.change.org/p/save-kaziranga-protect-wildlife-land-and-people"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="petition-pill"
+                        class="campaign-activity-link"
                     >✍️ Sign the petition</a>
+                    <span class="campaign-activity-separator">•</span>
                     <a
                         href="https://inuetc.com/savekaziranga/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="petition-pill"
+                        class="campaign-activity-link"
                     >🌿 Save Kaziranga</a>
+                    <span class="campaign-activity-separator">•</span>
                     <a
                         href="https://www.instagram.com/savekaziranga"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="petition-pill"
+                        class="campaign-activity-link"
                     >📸 @savekaziranga</a>
                 </div>
                 <p class="header-privacy">🔒 Your privacy matters — this site only uses your Google account to send emails on your behalf. I never store your email content or share your data.</p>
