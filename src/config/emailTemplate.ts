@@ -2,6 +2,23 @@
 
 export const DIRECTOR_EMAIL = 'dir.kaziranganp@gmail.com';
 
+// Government departments and Supreme Court
+export const GOVERNMENT_RECIPIENTS = [
+  'moef-doienvis@gov.in', // Ministry of Environment, Forest and Climate Change
+  'moaf@nic.in', // Ministry of Tribal Affairs
+  'principal-secretary@forst.assam.gov.in', // Assam Forest Department
+  'registrar@supremecourtofindia.org', // Supreme Court of India
+];
+
+// International organizations to CC for advocacy reach
+export const CC_RECIPIENTS = [
+  'wh-info@unesco.org', // UNESCO World Heritage Centre
+  'amnestyinternational@amnesty.org', // Amnesty International
+  'greenpeace.india@greenpeace.org', // Greenpeace India
+  'wwfindiainfo@wwfindia.org', // WWF India
+  'mail@iucn.org', // IUCN
+];
+
 export const DEFAULT_SUBJECT =
   'Concern regarding Kaziranga ESZ and nearby development';
 

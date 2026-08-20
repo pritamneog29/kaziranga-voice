@@ -16,6 +16,8 @@ import ImpactCounter from '../components/ImpactCounter';
 import {
   DIRECTOR_EMAIL,
   DEFAULT_SUBJECT,
+  CC_RECIPIENTS,
+  GOVERNMENT_RECIPIENTS,
   buildDefaultBody,
 } from '../config/emailTemplate';
 import {
@@ -267,13 +269,19 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
     recipients: string[],
     currentSubject: string,
     currentBody: string,
+    ccRecipients: string[] = [],
   ) => {
-    const rfc822Message = [
+    const headers = [
       `To: ${recipients.join(', ')}`,
+      ...(ccRecipients.length > 0 ? [`Cc: ${ccRecipients.join(', ')}`] : []),
       `Subject: ${currentSubject}`,
       `Reply-To: ${senderEmail.trim()}`,
       'MIME-Version: 1.0',
       'Content-Type: text/plain; charset="UTF-8"',
+    ];
+
+    const rfc822Message = [
+      ...headers,
       '',
       currentBody,
     ].join('\r\n');
@@ -334,7 +342,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
     setSendState('sending');
     setSendStateText('Sending...');
     try {
-      const recipients = [primaryRecipient, ...parseRecipients(otherRecipients)];
+      const recipients = [primaryRecipient, ...GOVERNMENT_RECIPIENTS, ...parseRecipients(otherRecipients)];
       const uniqueRecipients = Array.from(new Set(recipients));
       const bodyText = getBody();
 
@@ -343,6 +351,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
        uniqueRecipients,
        subject,
        bodyText,
+       CC_RECIPIENTS,
       );
       try {
        await recordOnlineMail();
