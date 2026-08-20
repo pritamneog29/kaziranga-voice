@@ -73,6 +73,11 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
   const [senderEmail, setSenderEmail] = useState(user?.email ?? '');
   const [primaryRecipient, setPrimaryRecipient] = useState(DIRECTOR_EMAIL);
   const [otherRecipients, setOtherRecipients] = useState('');
+  const [editablePrimaryRecipient, setEditablePrimaryRecipient] = useState(DIRECTOR_EMAIL);
+  const [enabledGovernmentRecipients, setEnabledGovernmentRecipients] = useState(
+    new Set(GOVERNMENT_RECIPIENTS)
+  );
+  const [enabledCCRecipients, setEnabledCCRecipients] = useState(new Set(CC_RECIPIENTS));
   const [personalExperience, setPersonalExperience] = useState('');
   const [body, setBody] = useState('');
   const [bodyEdited, setBodyEdited] = useState(false);
@@ -80,7 +85,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
   const [deletingData, setDeletingData] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const currentDayKey = getLocalDayKey();
-  const normalizedPrimaryRecipient = primaryRecipient.trim().toLowerCase();
+  const normalizedPrimaryRecipient = editablePrimaryRecipient.trim().toLowerCase();
   const currentStatusKey = `${user?.uid ?? 'no-user'}|${normalizedPrimaryRecipient}|${currentDayKey}`;
   const cachedStatus = onlineMailStatusCache.get(currentStatusKey) ?? null;
   const [sendState, setSendState] = useState<SendState>('idle');
@@ -342,7 +347,9 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
     setSendState('sending');
     setSendStateText('Sending...');
     try {
-      const recipients = [primaryRecipient, ...GOVERNMENT_RECIPIENTS, ...parseRecipients(otherRecipients)];
+      const enabledGovRecipients = Array.from(enabledGovernmentRecipients);
+      const enabledCCs = Array.from(enabledCCRecipients);
+      const recipients = [editablePrimaryRecipient, ...enabledGovRecipients, ...parseRecipients(otherRecipients)];
       const uniqueRecipients = Array.from(new Set(recipients));
       const bodyText = getBody();
 
@@ -351,7 +358,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
        uniqueRecipients,
        subject,
        bodyText,
-       CC_RECIPIENTS,
+       enabledCCs,
       );
       try {
        await recordOnlineMail();
@@ -361,7 +368,7 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
       try {
        await markUserOnlineMailSent(
          user.uid,
-         primaryRecipient,
+         editablePrimaryRecipient,
          {
            uid: user.uid,
            name: senderName.trim() || user.name,
@@ -469,33 +476,99 @@ export default function EmailComposerScreen({ user, onBack, onHome, onSignOut }:
               </>
             )}
 
-            <Text style={styles.label}>Primary Recipient (To:)</Text>
-            <TextInput
-              style={styles.input}
-              value={primaryRecipient}
-              onChangeText={setPrimaryRecipient}
-              placeholder="recipient@example.com"
-              placeholderTextColor={COLORS.textMuted}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <Text style={styles.recipientHint}>
-              Default is the Director of Kaziranga National Park. For testing, you can change this to your own email.
-            </Text>
+            <Text style={styles.label}>Recipients</Text>
+            
+            {/* Recipients Container */}
+            <View style={styles.recipientsContainer}>
+              {/* Primary Recipient - Editable */}
+              <View style={styles.recipientChipGroup}>
+                <Text style={styles.recipientChipLabel}>📧 Main Recipient (To):</Text>
+                <TextInput
+                  style={styles.primaryRecipientInput}
+                  value={editablePrimaryRecipient}
+                  onChangeText={setEditablePrimaryRecipient}
+                  placeholder="recipient@example.com"
+                  placeholderTextColor={COLORS.textMuted}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
 
-            <Text style={styles.label}>Additional Recipients</Text>
-            <TextInput
-              style={styles.input}
-              value={otherRecipients}
-              onChangeText={setOtherRecipients}
-              placeholder="comma-separated emails, e.g. local.officer@example.com, activist@example.org"
-              placeholderTextColor={COLORS.textMuted}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <Text style={styles.recipientHint}>
-              Add other recipients to copy them on this message (optional).
-            </Text>
+              {/* Government Recipients - Toggleable */}
+              <View style={styles.recipientChipGroup}>
+                <Text style={styles.recipientChipLabel}>🏛️ Government (To) - Toggle to remove:</Text>
+                <View style={styles.recipientChips}>
+                  {GOVERNMENT_RECIPIENTS.map((recipient) => (
+                    <TouchableOpacity
+                      key={recipient}
+                      onPress={() => {
+                        const newSet = new Set(enabledGovernmentRecipients);
+                        if (newSet.has(recipient)) {
+                          newSet.delete(recipient);
+                        } else {
+                          newSet.add(recipient);
+                        }
+                        setEnabledGovernmentRecipients(newSet);
+                      }}
+                      style={[
+                        styles.recipientChip,
+                        !enabledGovernmentRecipients.has(recipient) && styles.recipientChipDisabled,
+                      ]}>
+                      <Text style={[
+                        styles.recipientChipText,
+                        !enabledGovernmentRecipients.has(recipient) && styles.recipientChipTextDisabled,
+                      ]}>
+                        {recipient.split('@')[0].substring(0, 20)}{enabledGovernmentRecipients.has(recipient) ? '' : ' ✕'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* CC Recipients - Toggleable */}
+              <View style={styles.recipientChipGroup}>
+                <Text style={styles.recipientChipLabel}>🌍 Advocacy Partners (CC) - Toggle to remove:</Text>
+                <View style={styles.recipientChips}>
+                  {CC_RECIPIENTS.map((recipient) => (
+                    <TouchableOpacity
+                      key={recipient}
+                      onPress={() => {
+                        const newSet = new Set(enabledCCRecipients);
+                        if (newSet.has(recipient)) {
+                          newSet.delete(recipient);
+                        } else {
+                          newSet.add(recipient);
+                        }
+                        setEnabledCCRecipients(newSet);
+                      }}
+                      style={[
+                        styles.recipientChip,
+                        styles.ccChip,
+                        !enabledCCRecipients.has(recipient) && styles.recipientChipDisabled,
+                      ]}>
+                      <Text style={[
+                        styles.recipientChipText,
+                        !enabledCCRecipients.has(recipient) && styles.recipientChipTextDisabled,
+                      ]}>
+                        {recipient.split('@')[0].substring(0, 20)}{enabledCCRecipients.has(recipient) ? '' : ' ✕'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Additional Recipients Input */}
+              <Text style={styles.recipientChipLabel}>+ Add More (optional):</Text>
+              <TextInput
+                style={styles.input}
+                value={otherRecipients}
+                onChangeText={setOtherRecipients}
+                placeholder="comma-separated emails"
+                placeholderTextColor={COLORS.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
 
             <Text style={styles.senderNote}>
               Using your signed-in identity. You can still edit it below.
@@ -886,6 +959,64 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     minHeight: 110,
     textAlignVertical: 'top',
+  },
+  recipientsContainer: {
+   backgroundColor: '#F0F7F0',
+    borderRadius: 14,
+    borderWidth: 1.5,
+   borderColor: '#A5D6A7',
+   padding: 14,
+   marginBottom: 16,
+  },
+  recipientChipGroup: {
+   marginBottom: 14,
+  },
+  recipientChipLabel: {
+   fontSize: 11,
+   fontWeight: '700',
+   color: '#1B5E20',
+   marginBottom: 8,
+   textTransform: 'uppercase',
+   letterSpacing: 0.3,
+  },
+  recipientChips: {
+   flexDirection: 'row',
+   flexWrap: 'wrap',
+   gap: 6,
+  },
+  recipientChip: {
+   backgroundColor: '#C8E6C9',
+   borderRadius: 20,
+   paddingHorizontal: 10,
+   paddingVertical: 6,
+   marginRight: 4,
+   marginBottom: 4,
+  },
+  recipientChipText: {
+   fontSize: 11,
+   fontWeight: '600',
+   color: '#1B5E20',
+  },
+  recipientChipDisabled: {
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+  },
+  recipientChipTextDisabled: {
+    color: '#999999',
+  },
+  ccChip: {
+    backgroundColor: '#B3E5FC',
+  },
+  primaryRecipientInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#81C784',
+    padding: 10,
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
   },
   bodyHeader: {
     flexDirection: 'row',
