@@ -22,7 +22,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/og-kaziranga-voice.png"
     },
     "plugins": [
       "expo-web-browser"
